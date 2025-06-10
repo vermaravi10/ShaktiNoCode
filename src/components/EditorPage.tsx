@@ -1,16 +1,17 @@
 
 import React, { useState, useRef } from 'react';
-import { Layout, Switch, Typography } from 'antd';
+import { Layout } from 'antd';
 import WidgetLibrary from './WidgetLibrary';
 import Canvas from './Canvas';
 import ChatPanel from './ChatPanel';
 import CodeEditor from './CodeEditor';
+import Toolbar from './Toolbar';
 
-const { Header, Sider, Content } = Layout;
-const { Text } = Typography;
+const { Sider, Content } = Layout;
 
 const EditorPage = () => {
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
   const [droppedWidgets, setDroppedWidgets] = useState([]);
   const monacoRef = useRef(null);
 
@@ -40,13 +41,23 @@ const EditorPage = () => {
           return `  <img src="placeholder.jpg" alt="${widget.content}" style={{ width: '200px', height: '150px', objectFit: 'cover' }} />`;
         case 'Text':
           return `  <p>${widget.content}</p>`;
+        case 'Table':
+          return `  <Table dataSource={[]} columns={[]} />`;
+        case 'Form':
+          return `  <Form layout="vertical">
+    <Form.Item label="Sample Field">
+      <Input placeholder="Enter value" />
+    </Form.Item>
+  </Form>`;
+        case 'Calendar':
+          return `  <Calendar />`;
         default:
           return `  <div>${widget.content}</div>`;
       }
     }).join('\n');
 
     return `import React from 'react';
-import { Button } from 'antd';
+import { Button, Table, Form, Input, Calendar } from 'antd';
 
 const GeneratedComponent = () => {
   return (
@@ -67,46 +78,66 @@ export default GeneratedComponent;`;
     }
   };
 
+  const toggleMobileView = () => {
+    setIsMobileView(!isMobileView);
+  };
+
   const siderWidth = isEditMode ? 0 : 300;
-  const canvasHeight = isEditMode ? '50vh' : 'calc(100vh - 64px)';
+  const canvasHeight = isEditMode ? '50vh' : 'calc(100vh - 120px)';
 
   return (
-    <Layout className="editor-layout">
-      <Header className="editor-header">
-        <div className="mode-toggle">
-          <Text strong>Edit Mode</Text>
-          <Switch checked={isEditMode} onChange={toggleMode} />
-        </div>
-      </Header>
+    <Layout className="editor-layout min-h-screen">
+      <Toolbar 
+        isEditMode={isEditMode}
+        onToggleMode={toggleMode}
+        isMobileView={isMobileView}
+        onToggleMobileView={toggleMobileView}
+      />
       
-      <Layout>
+      <Layout className="flex-1">
         <Sider
           width={siderWidth}
           style={{
             transition: 'width 0.3s ease',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            background: '#fafafa'
           }}
+          className="border-r border-border"
         >
           <WidgetLibrary />
         </Sider>
         
-        <Content style={{ height: canvasHeight }}>
-          <Canvas onDrop={handleDrop} droppedWidgets={droppedWidgets} />
+        <Content 
+          style={{ 
+            height: canvasHeight,
+            transition: 'all 0.3s ease'
+          }}
+          className="relative"
+        >
+          <div className={`transition-all duration-300 mx-auto ${
+            isMobileView 
+              ? 'max-w-sm border-x border-border shadow-lg' 
+              : 'w-full'
+          }`}>
+            <Canvas onDrop={handleDrop} droppedWidgets={droppedWidgets} isMobileView={isMobileView} />
+          </div>
         </Content>
         
         <Sider
           width={siderWidth}
           style={{
             transition: 'width 0.3s ease',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            background: '#fafafa'
           }}
+          className="border-l border-border"
         >
           <ChatPanel />
         </Sider>
       </Layout>
       
       {isEditMode && (
-        <div className="code-editor-container">
+        <div className="code-editor-container border-t border-border">
           <CodeEditor ref={monacoRef} />
         </div>
       )}

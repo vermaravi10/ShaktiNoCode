@@ -103,17 +103,17 @@
 }
 
 .widget-library {
-  background: rgb(248 250 252);
+  background: rgb(250 250 250);
   border-right: 1px solid rgb(226 232 240);
-  padding: 16px;
   overflow-y: auto;
+  height: 100%;
 }
 
 .widget-card {
-  margin-bottom: 12px;
   cursor: grab;
   transition: all 0.2s ease;
   border: 1px solid rgb(226 232 240);
+  background: white;
 }
 
 .widget-card:hover {
@@ -130,6 +130,15 @@
   background: white;
   position: relative;
   overflow: auto;
+  height: 100%;
+}
+
+.mobile-canvas {
+  background: rgb(248 250 252);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px 0;
 }
 
 .drop-zone {
@@ -140,6 +149,15 @@
   padding: 20px;
   transition: all 0.3s ease;
   background: rgb(248 250 252 / 0.5);
+}
+
+.mobile-canvas .drop-zone {
+  background: white;
+  border: 1px solid rgb(226 232 240);
+  box-shadow: 0 4px 6px rgb(0 0 0 / 0.05);
+  border-radius: 16px;
+  max-width: 375px;
+  width: 100%;
 }
 
 .drop-zone.drag-over {
@@ -188,7 +206,12 @@
   background: rgb(30 41 59);
 }
 
-/* Responsive design */
+/* Enhanced toolbar styles */
+.toolbar-gradient {
+  background: linear-gradient(90deg, rgb(99 102 241 / 0.05) 0%, rgb(236 254 255 / 0.1) 100%);
+}
+
+/* Mobile responsive styles */
 @media (max-width: 768px) {
   .hero-title {
     font-size: 2.5rem;
@@ -201,4 +224,42 @@
   .idea-input-container {
     max-width: 90%;
   }
+
+  .editor-layout {
+    height: 100vh;
+  }
+
+  .mobile-canvas {
+    padding: 10px;
+  }
+
+  .mobile-canvas .drop-zone {
+    margin: 5px;
+    padding: 15px;
+  }
 }
+
+/* Smooth animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.widget-card,
+.dropped-widget {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Focus and accessibility improvements */
+.widget-card:focus,
+.dropped-widget:focus {
+  outline: 2px solid rgb(99 102 241);
+  outline-offset: 2px;
+}
+

@@ -1,9 +1,18 @@
-
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { Undo, Redo, Smartphone, Monitor, Save, Rocket, Sparkles } from 'lucide-react';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import {
+  Undo,
+  Redo,
+  Smartphone,
+  Monitor,
+  Save,
+  Rocket,
+  Sparkles,
+  Sun,
+  Moon,
+} from "lucide-react";
+import { Tooltip } from "antd";
 
 interface ToolbarProps {
   isEditMode: boolean;
@@ -12,137 +21,143 @@ interface ToolbarProps {
   onToggleMobileView: () => void;
 }
 
-const Toolbar = ({ isEditMode, onToggleMode, isMobileView, onToggleMobileView }: ToolbarProps) => {
-  const handleUndo = () => {
-    console.log('Undo action');
-    // TODO: Implement undo functionality
-  };
+const Toolbar: React.FC<ToolbarProps> = ({
+  isEditMode,
+  onToggleMode,
+  isMobileView,
+  onToggleMobileView,
+}) => {
+  const [theme, setTheme] = React.useState<"light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("theme") === "dark" ? "dark" : "light";
+    }
+    return "light";
+  });
 
-  const handleRedo = () => {
-    console.log('Redo action');
-    // TODO: Implement redo functionality
-  };
+  React.useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
-  const handleSave = () => {
-    console.log('Save action');
-    // TODO: Implement save functionality
-  };
-
-  const handleDeploy = () => {
-    console.log('Deploy action');
-    // TODO: Implement deploy functionality
-  };
-
-  const handleAutoCorrect = () => {
-    console.log('AI Auto-correct action');
-    // TODO: Implement AI auto-correct functionality
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
   };
 
   return (
-    <div className="flex items-center justify-between w-full px-6 py-3 bg-background border-b border-border">
-      {/* Left section - Breadcrumb */}
-      <div className="flex items-center space-x-4">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/" className="text-muted-foreground hover:text-foreground">
-                Home
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/editor" className="text-muted-foreground hover:text-foreground">
-                Editor
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage className="text-foreground font-medium">
-                My Website
-              </BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+    <div className="flex items-center justify-between w-full px-4 py-2 border-b border-border bg-background text-foreground shadow-sm">
+      {/* Left: Action Buttons */}
+      <div className="flex items-center gap-2">
+        <Tooltip title="Save">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="text-foreground hover:bg-muted rounded-md"
+          >
+            <Save className="h-4 w-4" />
+          </Button>
+        </Tooltip>
+
+        <Tooltip title="AI Auto-correct">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="text-foreground bg-gradient-to-r from-primary/10 to-accent/10 hover:from-primary/20 hover:to-accent/20 rounded-md"
+          >
+            <Sparkles className="h-4 w-4" />
+          </Button>
+        </Tooltip>
+
+        <Tooltip title="Undo">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="text-foreground hover:bg-muted rounded-md"
+          >
+            <Undo className="h-4 w-4" />
+          </Button>
+        </Tooltip>
+
+        <Tooltip title="Redo">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="text-foreground hover:bg-muted rounded-md"
+          >
+            <Redo className="h-4 w-4" />
+          </Button>
+        </Tooltip>
       </div>
 
-      {/* Center section - Action buttons */}
-      <div className="flex items-center space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleUndo}
-          className="flex items-center gap-2"
+      {/* Right: Toggles & Deploy */}
+      <div className="flex items-center gap-3">
+        {/* Edit Mode */}
+        <Tooltip title={isEditMode ? "Exit Edit Mode" : "Enter Edit Mode"}>
+          <div className="flex items-center gap-1">
+            <Switch
+              checked={isEditMode}
+              onCheckedChange={onToggleMode}
+              className="data-[state=checked]:bg-black data-[state=unchecked]:bg-gray-300"
+            />
+          </div>
+        </Tooltip>
+
+        {/* View Toggle */}
+        <Tooltip
+          title={
+            isMobileView ? "Switch to Desktop View" : "Switch to Mobile View"
+          }
         >
-          <Undo className="h-4 w-4" />
-          Undo
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRedo}
-          className="flex items-center gap-2"
+          <Button
+            size="icon"
+            variant="ghost"
+            className={`text-foreground hover:bg-muted rounded-md transition ${
+              isMobileView ? "bg-accent/10" : ""
+            }`}
+            onClick={onToggleMobileView}
+          >
+            {!isMobileView ? (
+              <Smartphone className="h-4 w-4" />
+            ) : (
+              <Monitor className="h-4 w-4" />
+            )}
+          </Button>
+        </Tooltip>
+
+        {/* Theme Toggle */}
+        <Tooltip
+          title={
+            theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"
+          }
         >
-          <Redo className="h-4 w-4" />
-          Redo
-        </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={toggleTheme}
+            className="text-foreground hover:bg-muted rounded-md"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+          </Button>
+        </Tooltip>
 
-        <div className="h-6 w-px bg-border mx-2" />
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onToggleMobileView}
-          className={`flex items-center gap-2 ${isMobileView ? 'bg-accent' : ''}`}
-        >
-          {isMobileView ? (
-            <Smartphone className="h-4 w-4" />
-          ) : (
-            <Monitor className="h-4 w-4" />
-          )}
-          {isMobileView ? 'Mobile' : 'Desktop'}
-        </Button>
-
-        <div className="h-6 w-px bg-border mx-2" />
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleAutoCorrect}
-          className="flex items-center gap-2 bg-gradient-to-r from-primary/10 to-accent/10 hover:from-primary/20 hover:to-accent/20"
-        >
-          <Sparkles className="h-4 w-4" />
-          AI Auto-correct
-        </Button>
-      </div>
-
-      {/* Right section - Mode toggle and action buttons */}
-      <div className="flex items-center space-x-4">
-        <div className="flex items-center space-x-2">
-          <span className="text-sm font-medium text-foreground">Edit Mode</span>
-          <Switch checked={isEditMode} onCheckedChange={onToggleMode} />
-        </div>
-
-        <div className="h-6 w-px bg-border" />
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleSave}
-          className="flex items-center gap-2"
-        >
-          <Save className="h-4 w-4" />
-          Save
-        </Button>
-
-        <Button
-          size="sm"
-          onClick={handleDeploy}
-          className="flex items-center gap-2 bg-primary hover:bg-primary/90"
-        >
-          <Rocket className="h-4 w-4" />
-          Deploy
-        </Button>
+        {/* Deploy */}
+        <Tooltip title="Deploy Site">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="text-foreground bg-gradient-to-r from-blue-500/10 to-green-500/10 hover:from-blue-500/20 hover:to-green-500/20 rounded-md"
+          >
+            <Rocket className="h-4 w-4" />
+          </Button>
+        </Tooltip>
       </div>
     </div>
   );

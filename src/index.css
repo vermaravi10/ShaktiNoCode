@@ -3,21 +3,29 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom design system for no-code AI builder */
+
 
 @layer base {
   :root {
-    --background: 255 255 255;
-    --foreground: 15 23 42;
-    --primary: 99 102 241;
+    
+
+      --background: 0 0% 100%;
+  --foreground: 240 10% 10%;
+  --border: 240 5% 90%;
+  --muted: 240 4.8% 95.9%;
+  --primary: 220 90% 56%;
+  --accent: 200 100% 60%;
+
+    
+    
     --primary-foreground: 255 255 255;
     --secondary: 241 245 249;
     --secondary-foreground: 51 65 85;
-    --muted: 248 250 252;
+    
     --muted-foreground: 100 116 139;
-    --accent: 236 254 255;
+    
     --accent-foreground: 14 116 144;
-    --border: 226 232 240;
+    
     --input: 226 232 240;
     --ring: 99 102 241;
     --radius: 0.75rem;
@@ -30,37 +38,123 @@
     box-sizing: border-box;
   }
 
+  button {
+    @apply text-white;
+  }
+
+
   * {
     box-sizing: border-box;
   }
 }
 
-/* Landing page styles */
-.landing-hero {
-  background: linear-gradient(135deg, rgb(99 102 241 / 0.05) 0%, rgb(236 254 255 / 0.8) 100%);
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.dark {
+  --background: 240 10% 10%;
+  --foreground: 0 0% 100%;
+  --border: 240 5% 30%;
+  --accent: 200 100% 70%;
+  --primary: 220 100% 70%;
+   --canvas-background: 240 4% 16%; 
 }
+
+
+.landing-hero {
+	background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #0e0f0f);
+	background-size: 400% 400%;
+	animation: gradient 15s ease infinite;
+	height: 100%;
+}
+
+@keyframes gradient {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
+
+
+
+
+.community-nav-button {
+  padding: 0.2rem 0.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: linear-gradient(90deg, #29232d 0%, #211e2d 100%);
+  color: hwb(0 100% 0%);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+
+}
+.community-nav-button:hover,
+.community-nav-button:focus {
+  background: linear-gradient(90deg, #1c1b1e 0%, #391f4e 100%);
+  color: #908b94;
+  box-shadow: 0 4px 16px rgba(140, 75, 194, 0.15);
+  outline: none;
+}
+
+
+
+
+
+@keyframes gradient {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
+
+
+.nav-btn{
+
+border: none;
+border-radius: 0.5rem;
+color: white;
+font-size: 1rem;
+font-weight: 400;
+cursor: pointer;
+
+}
+
+.nav-btn:hover,
+.nav-btn:focus {
+
+color: rgb(226, 218, 218);
+
+outline: none;
+}
+
 
 .hero-content {
   text-align: center;
-  max-width: 800px;
+  
   padding: 2rem;
 }
 
 .hero-title {
   font-size: 3.5rem;
   font-weight: 700;
-  color: rgb(15 23 42);
+  color: #FDFBEE;
   margin-bottom: 1rem;
   letter-spacing: -0.025em;
+  margin-top: 130px;
 }
 
 .hero-subtitle {
   font-size: 1.25rem;
-  color: rgb(100 116 139);
+  color: #F8FAFC;
   margin-bottom: 3rem;
   line-height: 1.6;
 }
@@ -70,6 +164,7 @@
   width: 100%;
   max-width: 600px;
   margin: 0 auto 2rem;
+  
 }
 
 .embedded-controls {
@@ -127,14 +222,15 @@
 }
 
 .canvas-area {
-  background: white;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
   position: relative;
   overflow: auto;
   height: 100%;
 }
 
 .mobile-canvas {
-  background: rgb(248 250 252);
+   background-color: hsl(var(--background));
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -143,12 +239,12 @@
 
 .drop-zone {
   min-height: 400px;
-  border: 2px dashed rgb(203 213 225);
+  border: 2px dashed hsl(var(--border));
   border-radius: 12px;
   margin: 20px;
   padding: 20px;
   transition: all 0.3s ease;
-  background: rgb(248 250 252 / 0.5);
+  background-color: hsl(var(--canvas-background));
 }
 
 .mobile-canvas .drop-zone {
@@ -239,17 +335,7 @@
   }
 }
 
-/* Smooth animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+
 
 .widget-card,
 .dropped-widget {

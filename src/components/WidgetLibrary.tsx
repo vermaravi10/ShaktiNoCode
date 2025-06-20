@@ -1,15 +1,30 @@
-
-import React, { useState, useMemo } from 'react';
-import { Input, Card, Typography } from 'antd';
-import { useDrag } from 'react-dnd';
-import { SearchOutlined, BorderOutlined, FileImageOutlined, FontSizeOutlined, TableOutlined, FormOutlined, CalendarOutlined } from '@ant-design/icons';
+import React, { useState, useMemo } from "react";
+import { Input, Typography } from "antd";
+import { useDrag } from "react-dnd";
+import {
+  SearchOutlined,
+  BorderOutlined,
+  FileImageOutlined,
+  FontSizeOutlined,
+  TableOutlined,
+  FormOutlined,
+  CalendarOutlined,
+  SlidersOutlined, // new icon for the slider
+} from "@ant-design/icons";
 
 const { Search } = Input;
 const { Text } = Typography;
 
-const DraggableWidget = ({ type, icon, label }) => {
+interface WidgetDef {
+  type: string;
+  icon: React.ReactNode;
+  label: string;
+  category: string;
+}
+
+const DraggableWidget: React.FC<WidgetDef> = ({ type, icon, label }) => {
   const [{ isDragging }, drag] = useDrag(() => ({
-    type: 'widget',
+    type: "widget",
     item: { type, content: `Sample ${type}` },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
@@ -17,60 +32,91 @@ const DraggableWidget = ({ type, icon, label }) => {
   }));
 
   return (
-    <Card
+    <div
       ref={drag}
-      className="widget-card"
-      size="small"
-      style={{
-        opacity: isDragging ? 0.5 : 1,
-        cursor: 'grab',
-        marginBottom: '8px'
-      }}
+      className="mb-2 rounded border border-border p-2 cursor-grab hover:bg-muted transition"
+      style={{ opacity: isDragging ? 0.5 : 1 }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className="flex items-center gap-2 text-foreground">
         {icon}
-        <Text>{label}</Text>
+        <span className="text-sm">{label}</span>
       </div>
-    </Card>
+    </div>
   );
 };
 
-const WidgetLibrary = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+const WidgetLibrary: React.FC = () => {
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const allWidgets = [
-    { type: 'Button', icon: <BorderOutlined />, label: 'Button', category: 'Basic' },
-    { type: 'Image', icon: <FileImageOutlined />, label: 'Image', category: 'Media' },
-    { type: 'Text', icon: <FontSizeOutlined />, label: 'Text', category: 'Basic' },
-    { type: 'Table', icon: <TableOutlined />, label: 'Table', category: 'Data' },
-    { type: 'Form', icon: <FormOutlined />, label: 'Form', category: 'Input' },
-    { type: 'Calendar', icon: <CalendarOutlined />, label: 'Calendar', category: 'Data' },
+  const allWidgets: WidgetDef[] = [
+    {
+      type: "Button",
+      icon: <BorderOutlined />,
+      label: "Button",
+      category: "Basic",
+    },
+    {
+      type: "Image",
+      icon: <FileImageOutlined />,
+      label: "Image",
+      category: "Media",
+    },
+    {
+      type: "Text",
+      icon: <FontSizeOutlined />,
+      label: "Text",
+      category: "Basic",
+    },
+    {
+      type: "Table",
+      icon: <TableOutlined />,
+      label: "Table",
+      category: "Data",
+    },
+    { type: "Form", icon: <FormOutlined />, label: "Form", category: "Input" },
+    {
+      type: "Calendar",
+      icon: <CalendarOutlined />,
+      label: "Calendar",
+      category: "Data",
+    },
+
+    // NEW WIDGETS:
+    {
+      type: "SearchBar",
+      icon: <SearchOutlined />,
+      label: "Search Bar",
+      category: "Input",
+    },
+    {
+      type: "ImageSlider",
+      icon: <SlidersOutlined />,
+      label: "Image Slider",
+      category: "Media",
+    },
   ];
 
   const filteredWidgets = useMemo(() => {
-    if (!searchTerm.trim()) {
-      return allWidgets;
-    }
-    return allWidgets.filter(widget =>
-      widget.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      widget.category.toLowerCase().includes(searchTerm.toLowerCase())
+    if (!searchTerm.trim()) return allWidgets;
+    const lower = searchTerm.toLowerCase();
+    return allWidgets.filter(
+      (w) =>
+        w.label.toLowerCase().includes(lower) ||
+        w.category.toLowerCase().includes(lower)
     );
   }, [searchTerm]);
 
   const groupedWidgets = useMemo(() => {
-    const grouped = filteredWidgets.reduce((acc, widget) => {
-      if (!acc[widget.category]) {
-        acc[widget.category] = [];
-      }
-      acc[widget.category].push(widget);
+    return filteredWidgets.reduce<Record<string, WidgetDef[]>>((acc, w) => {
+      (acc[w.category] = acc[w.category] || []).push(w);
       return acc;
     }, {});
-    return grouped;
   }, [filteredWidgets]);
 
   return (
-    <div className="widget-library" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '16px', borderBottom: '1px solid #e5e7eb' }}>
+    <div className="flex flex-col h-full bg-background text-foreground">
+      {/* Search Input */}
+      <div className="border-b border-border px-4 py-3">
         <Search
           placeholder="Search widgets..."
           prefix={<SearchOutlined />}
@@ -79,25 +125,27 @@ const WidgetLibrary = () => {
           allowClear
         />
       </div>
-      
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+
+      {/* Widget List */}
+      <div className="flex-1 overflow-y-auto px-4 py-4">
         {Object.keys(groupedWidgets).length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '20px', color: '#6b7280' }}>
-            <Text type="secondary">No widgets found matching "{searchTerm}"</Text>
+          <div className="text-muted-foreground text-sm text-center p-5">
+            No widgets found matching "{searchTerm}"
           </div>
         ) : (
           Object.entries(groupedWidgets).map(([category, widgets]) => (
-            <div key={category} style={{ marginBottom: '20px' }}>
-              <Text strong style={{ fontSize: '12px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <div key={category} className="mb-6">
+              <div className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-2">
                 {category}
-              </Text>
-              <div style={{ marginTop: '8px' }}>
+              </div>
+              <div className="space-y-2">
                 {widgets.map((widget) => (
                   <DraggableWidget
                     key={widget.type}
                     type={widget.type}
                     icon={widget.icon}
                     label={widget.label}
+                    category={widget.category}
                   />
                 ))}
               </div>

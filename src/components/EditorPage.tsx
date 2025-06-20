@@ -3,27 +3,61 @@ import { Layout } from "antd";
 import WidgetLibrary from "./WidgetLibrary";
 import Canvas, { Widget } from "./Canvas";
 import ChatPanel from "./ChatPanel";
-import CodeEditor from "./CodeEditor";
 import Toolbar from "./Toolbar";
 import EditorFooter from "./EditorFooter";
+import CodeEditor from "./CodeEditor";
+import { parseWidgetsFromJSX } from "./utils/parseWidgets";
 
 const { Sider, Content } = Layout;
 const MIN_SIDER = 150;
 const MAX_SIDER = 500;
 
+// regenerate the code string from a fresh list of widgets
+function regenerateCodeFromWidgets(
+  widgets: Widget[],
+  template: string
+): string {
+  const [before, after] = template.split(
+    "{/* Your generated components will appear here */}"
+  );
+  const lines = widgets.map((w) => `      <${w.type}>${w.content}</${w.type}>`);
+  return (
+    before +
+    "{/* Your generated components will appear here */}\n" +
+    lines.join("\n") +
+    "\n" +
+    after
+  );
+}
+
+const initialCode = `import React from 'react';
+import { Button } from 'antd';
+
+const GeneratedComponent = () => {
+  return (
+    <div style={{ padding: '20px' }}>
+      {/* Your generated components will appear here */}
+    </div>
+  );
+};
+
+export default GeneratedComponent;
+`;
+
 const EditorPage: React.FC = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
   const [droppedWidgets, setDroppedWidgets] = useState<Widget[]>([]);
+  const [code, setCode] = useState<string>(initialCode);
   const [splitRatio, setSplitRatio] = useState(0.5);
   const [leftWidth, setLeftWidth] = useState(300);
   const [rightWidth, setRightWidth] = useState(300);
-
   const [selectedWidgetId, setSelectedWidgetId] = useState<number | null>(null);
+
   const monacoRef = useRef<any>(null);
   const dragging = useRef<null | "left" | "right" | "split">(null);
 
-  // Resize handlers…
+  // resize handlers…
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (dragging.current === "split") {
@@ -61,33 +95,54 @@ const EditorPage: React.FC = () => {
   }, [selectedWidgetId]);
 
   const handleDrop = (widget: any) => {
+    // 1️⃣ update canvas state
     const nw: Widget = {
       id: Date.now(),
       type: widget.type,
       content: widget.content,
     };
     setDroppedWidgets((ws) => [...ws, nw]);
+
+    // 2️⃣ inject JSX into code
+    const snippet = `      <${widget.type}>${widget.content}</${widget.type}>\n`;
+    const newCode = code.replace(
+      "{/* Your generated components will appear here */}",
+      `{/* Your generated components will appear here */}\n${snippet}`
+    );
+    setCode(newCode);
   };
+
+  // const moveWidget = (from: number, to: number) => {
+  //   setDroppedWidgets((ws) => {
+  //     const copy = [...ws];
+  //     const [moved] = copy.splice(from, 1);
+  //     copy.splice(to, 0, moved);
+  //     return copy;
+  //   });
+  //   // re-generate code order if you like…
+  // };
 
   const moveWidget = (from: number, to: number) => {
     setDroppedWidgets((ws) => {
       const copy = [...ws];
       const [moved] = copy.splice(from, 1);
       copy.splice(to, 0, moved);
+
+      // **new**: regenerate and push into Monaco
+      const newCode = regenerateCodeFromWidgets(copy, code);
+      setCode(newCode);
+
       return copy;
     });
   };
-
-  const toggleMode = (on: boolean) => setIsEditMode(on);
-  const toggleMobileView = () => setIsMobileView((v) => !v);
 
   return (
     <Layout className="editor-layout bg-background dark:bg-black h-screen">
       <Toolbar
         isEditMode={isEditMode}
-        onToggleMode={toggleMode}
+        onToggleMode={() => setIsEditMode((m) => !m)}
         isMobileView={isMobileView}
-        onToggleMobileView={toggleMobileView}
+        onToggleMobileView={() => setIsMobileView((v) => !v)}
       />
 
       <Layout className="flex flex-row flex-1 overflow-hidden">
@@ -107,6 +162,7 @@ const EditorPage: React.FC = () => {
         <Content className="flex flex-col flex-1 overflow-hidden">
           {isEditMode ? (
             <div className="flex flex-col flex-1 p-4">
+              {/* Canvas */}
               <div
                 className="overflow-auto"
                 style={{ height: `${splitRatio * 100}vh` }}
@@ -120,15 +176,24 @@ const EditorPage: React.FC = () => {
                   onSelectWidget={setSelectedWidgetId}
                 />
               </div>
+              {/* Splitter */}
               <div
                 onMouseDown={() => (dragging.current = "split")}
                 className="h-1 bg-border cursor-row-resize"
               />
+              {/* Code Editor */}
               <div
                 className="overflow-auto"
                 style={{ height: `${(1 - splitRatio) * 100}vh` }}
               >
-                <CodeEditor ref={monacoRef} />
+                <CodeEditor
+                  ref={monacoRef}
+                  code={code}
+                  onCodeChange={(newVal) => {
+                    setCode(newVal);
+                    setDroppedWidgets(parseWidgetsFromJSX(newVal));
+                  }}
+                />
               </div>
             </div>
           ) : (

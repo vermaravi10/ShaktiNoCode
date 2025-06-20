@@ -139,7 +139,7 @@ const WidgetLibrary: React.FC = () => {
                 {category}
               </div>
               <div className="space-y-2">
-                {widgets.map((widget) => (
+                {widgets?.map((widget) => (
                   <DraggableWidget
                     key={widget.type}
                     type={widget.type}

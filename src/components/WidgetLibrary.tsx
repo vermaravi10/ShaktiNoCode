@@ -1,3 +1,4 @@
+// src/WidgetLibrary.tsx
 import React, { useState, useMemo } from "react";
 import { Input, Typography } from "antd";
 import { useDrag } from "react-dnd";
@@ -9,7 +10,7 @@ import {
   TableOutlined,
   FormOutlined,
   CalendarOutlined,
-  SlidersOutlined, // new icon for the slider
+  SlidersOutlined,
 } from "@ant-design/icons";
 
 const { Search } = Input;
@@ -80,8 +81,6 @@ const WidgetLibrary: React.FC = () => {
       label: "Calendar",
       category: "Data",
     },
-
-    // NEW WIDGETS:
     {
       type: "SearchBar",
       icon: <SearchOutlined />,
@@ -97,13 +96,23 @@ const WidgetLibrary: React.FC = () => {
   ];
 
   const filteredWidgets = useMemo(() => {
-    if (!searchTerm.trim()) return allWidgets;
-    const lower = searchTerm.toLowerCase();
-    return allWidgets.filter(
-      (w) =>
-        w.label.toLowerCase().includes(lower) ||
-        w.category.toLowerCase().includes(lower)
-    );
+    const lower = searchTerm.trim().toLowerCase();
+
+    // Hide SearchBar & ImageSlider when search is empty
+    const base = lower
+      ? allWidgets
+      : allWidgets.filter(
+          (w) => w.type !== "SearchBar" && w.type !== "ImageSlider"
+        );
+
+    // If there's a search term, further filter by label or category
+    return lower
+      ? base.filter(
+          (w) =>
+            w.label.toLowerCase().includes(lower) ||
+            w.category.toLowerCase().includes(lower)
+        )
+      : base;
   }, [searchTerm]);
 
   const groupedWidgets = useMemo(() => {
@@ -139,7 +148,7 @@ const WidgetLibrary: React.FC = () => {
                 {category}
               </div>
               <div className="space-y-2">
-                {widgets?.map((widget) => (
+                {widgets.map((widget) => (
                   <DraggableWidget
                     key={widget.type}
                     type={widget.type}

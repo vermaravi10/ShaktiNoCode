@@ -53,6 +53,7 @@ const EditorPage: React.FC = () => {
   const [leftWidth, setLeftWidth] = useState(300);
   const [rightWidth, setRightWidth] = useState(300);
   const [selectedWidgetId, setSelectedWidgetId] = useState<number | null>(null);
+  console.log("🚀 ~ selectedWidgetId:", selectedWidgetId);
 
   const monacoRef = useRef<any>(null);
   const dragging = useRef<null | "left" | "right" | "split">(null);
@@ -84,14 +85,14 @@ const EditorPage: React.FC = () => {
 
   // Delete key listener
   useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Delete" && selectedWidgetId !== null) {
         setDroppedWidgets((ws) => ws.filter((w) => w.id !== selectedWidgetId));
         setSelectedWidgetId(null);
       }
     };
-    document.addEventListener("keyup", onKeyDown, true);
-    return () => document.removeEventListener("keyup", onKeyDown, true);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedWidgetId]);
 
   const handleDrop = (widget: any) => {
@@ -112,23 +113,12 @@ const EditorPage: React.FC = () => {
     setCode(newCode);
   };
 
-  // const moveWidget = (from: number, to: number) => {
-  //   setDroppedWidgets((ws) => {
-  //     const copy = [...ws];
-  //     const [moved] = copy.splice(from, 1);
-  //     copy.splice(to, 0, moved);
-  //     return copy;
-  //   });
-  //   // re-generate code order if you like…
-  // };
-
   const moveWidget = (from: number, to: number) => {
     setDroppedWidgets((ws) => {
       const copy = [...ws];
       const [moved] = copy.splice(from, 1);
       copy.splice(to, 0, moved);
 
-      // **new**: regenerate and push into Monaco
       const newCode = regenerateCodeFromWidgets(copy, code);
       setCode(newCode);
 

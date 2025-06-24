@@ -1,14 +1,14 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
+import { DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import LandingPage from "./components/LandingPage";
 import EditorPage from "./components/EditorPage";
 import NotFound from "./pages/NotFound";
+import { EditorProvider } from "@/context/EditorContext";
 
 const queryClient = new QueryClient();
 
@@ -19,11 +19,13 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/editor" element={<EditorPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <EditorProvider>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/editor" element={<EditorPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </EditorProvider>
         </BrowserRouter>
       </DndProvider>
     </TooltipProvider>

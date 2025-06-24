@@ -12,6 +12,7 @@ import {
   Sun,
   Moon,
   Palette,
+  Home,
 } from "lucide-react";
 import { Tooltip } from "antd";
 
@@ -57,6 +58,16 @@ const Toolbar: React.FC<ToolbarProps> = ({
     <div className="flex items-center justify-between w-full px-4 py-2 border-b border-border  text-foreground shadow-sm">
       {/* Left: Action Buttons */}
       <div className="flex items-center gap-2">
+        <Tooltip title="Home">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="text-foreground hover:bg-muted rounded-md"
+            onClick={() => (window.location.href = "/")}
+          >
+            <Home className="h-4 w-4" />
+          </Button>
+        </Tooltip>
         <Tooltip title="Save">
           <Button
             size="icon"

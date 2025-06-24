@@ -1,5 +1,5 @@
 // src/Canvas.tsx
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   useDrop,
   useDrag,
@@ -16,23 +16,24 @@ import {
   Carousel,
   Space,
 } from "antd";
+import { useEditor } from "@/context/EditorContext";
 
 const { Text } = Typography;
 const { TextArea, Search } = Input;
 
 export interface Widget {
-  id: string;
-  type: string;
-  content: string;
+  id: any;
+  type: any;
+  content: any;
   props: any;
 }
 
 export interface CanvasProps {
   onDrop: (widget: any) => void;
-  widgets: any[];
+
   isMobileView: boolean;
   onMoveWidget: (fromIndex: number, toIndex: number) => void;
-  selectedWidgetId: number | null;
+
   onSelectWidget: (id: any) => void;
   setIsVisualEditMode: () => void;
 }
@@ -113,13 +114,26 @@ const SortableWidget: React.FC<{
 
 const Canvas: React.FC<CanvasProps> = ({
   onDrop,
-  widgets,
+
   isMobileView,
   onMoveWidget,
-  selectedWidgetId,
+
   onSelectWidget,
   setIsVisualEditMode,
 }) => {
+  const {
+    code,
+    setCode,
+    widgets,
+    setWidgets,
+    selectedWidgetId,
+    setSelectedWidgetId,
+    theme,
+    setTheme,
+    zoom,
+    setZoom,
+  } = useEditor();
+
   const [{ isOver }, dropRef] = useDrop({
     accept: "WIDGET",
     drop: (item: any) => {
@@ -133,6 +147,23 @@ const Canvas: React.FC<CanvasProps> = ({
     }),
   });
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+      const isDeleteKey = e.key === "Backspace" || e.key === "Delete";
+
+      if (isCmdOrCtrl && isDeleteKey && selectedWidgetId) {
+        e.preventDefault();
+        const updated = widgets.filter((w) => w.id !== selectedWidgetId);
+        setWidgets(updated);
+        setSelectedWidgetId(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [widgets, selectedWidgetId]);
+
   const renderWidget = (widget: Widget) => {
     const mobileStyles = isMobileView
       ? { maxWidth: "100%", fontSize: "14px" }
@@ -140,6 +171,54 @@ const Canvas: React.FC<CanvasProps> = ({
     const styleProps = widget.props.style || {};
 
     switch (widget.type) {
+      case "Button2":
+        return (
+          <Button
+            type="dashed"
+            style={{
+              ...styleProps,
+              backgroundColor: "#f9f0ff",
+              borderColor: "#9254de",
+              color: "#722ed1",
+            }}
+          >
+            {widget.content || "Dashed Button"}
+          </Button>
+        );
+
+      case "Button3":
+        return (
+          <Button
+            type="link"
+            style={{
+              ...styleProps,
+              fontWeight: "bold",
+              fontSize: "16px",
+              color: "#1677ff",
+            }}
+          >
+            {widget.content || "Link Button"}
+          </Button>
+        );
+
+      case "SearchBar2":
+        return (
+          <div style={styleProps}>
+            <Space direction="vertical" style={mobileStyles}>
+              <Search
+                placeholder={widget.content || "Type and hit Enter..."}
+                allowClear
+                enterButton="Go"
+                style={{
+                  width: isMobileView ? "100%" : 300,
+                  backgroundColor: "#e6f7ff",
+                  borderRadius: 4,
+                }}
+              />
+            </Space>
+          </div>
+        );
+
       case "Button":
         return (
           <Button type="primary" style={styleProps}>
@@ -306,6 +385,9 @@ const Canvas: React.FC<CanvasProps> = ({
         padding: isMobileView ? 12 : 20,
         minHeight: isMobileView ? 500 : 600,
         overflow: "auto",
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
       }}
     >
       {widgets.length === 0 ? (

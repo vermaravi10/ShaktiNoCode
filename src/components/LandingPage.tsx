@@ -23,6 +23,9 @@ const LandingPage = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const fileInputRef = useRef(null);
   const [promptText, setPromptText] = useState("");
+  const [linkInputVisible, setLinkInputVisible] = useState(false);
+  const [linkText, setLinkText] = useState("");
+  const [submittedLink, setSubmittedLink] = useState<string | null>(null);
 
   const handleFileUploadClick = () => {
     fileInputRef.current?.click();
@@ -30,7 +33,11 @@ const LandingPage = () => {
   };
 
   const handleGetStarted = () => {
-    navigate(`/editor?prompt=${encodeURIComponent(promptText)}`);
+    const query = `prompt=${encodeURIComponent(promptText)}`;
+    const link = submittedLink
+      ? `&link=${encodeURIComponent(submittedLink)}`
+      : "";
+    navigate(`/editor?${query}${link}`);
   };
 
   const handleAttach = () => {
@@ -194,7 +201,7 @@ const LandingPage = () => {
                 </div>
               )}
 
-              <textarea
+              {/* <textarea
                 placeholder={placeholder}
                 className="w-full resize-none bg-transparent text-white placeholder-gray-400 focus:outline-none"
                 rows={3}
@@ -206,7 +213,66 @@ const LandingPage = () => {
                     handleGetStarted();
                   }
                 }}
-              />
+              /> */}
+              <div className="w-full bg-transparent text-white placeholder-gray-400 focus:outline-none">
+                <div className="w-full resize-none bg-transparent text-white placeholder-gray-400 focus:outline-none">
+                  <textarea
+                    placeholder={placeholder}
+                    className="w-full resize-none bg-transparent text-white placeholder-gray-400 focus:outline-none"
+                    rows={linkInputVisible ? 4 : 3}
+                    value={promptText}
+                    onChange={(e) => setPromptText(e.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault();
+                        handleGetStarted();
+                      }
+                    }}
+                  />
+                  {submittedLink ? (
+                    <div className="text-sm text-gray-300 border-t border-gray-700 pt-2 flex items-center justify-between">
+                      <span className="truncate">{submittedLink}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSubmittedLink(null);
+                          setLinkText("");
+                          setLinkInputVisible(true);
+                        }}
+                        className="text-xs text-red-400 hover:text-red-200"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    linkInputVisible && (
+                      <input
+                        type="url"
+                        value={linkText}
+                        onChange={(e) => setLinkText(e.target.value)}
+                        onBlur={() => {
+                          if (linkText.trim()) {
+                            setSubmittedLink(linkText.trim());
+                            setLinkInputVisible(false);
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            if (linkText.trim()) {
+                              setSubmittedLink(linkText.trim());
+                              setLinkInputVisible(false);
+                            }
+                          }
+                        }}
+                        placeholder="Paste your link here..."
+                        className="w-full mt-2 bg-transparent text-white placeholder-gray-400 focus:outline-none border-t border-gray-700 pt-2"
+                      />
+                    )
+                  )}
+                </div>
+              </div>
+
               <input
                 type="file"
                 multiple
@@ -235,7 +301,7 @@ const LandingPage = () => {
               {/* new “add file” button next to + */}
               <button
                 type="button"
-                onClick={handleFileUploadClick}
+                onClick={() => setLinkInputVisible(true)}
                 className="h-8 w-8 rounded-full border border-white flex items-center justify-center hover:bg-white hover:text-black transition"
               >
                 <PaperClipOutlined />

@@ -21,18 +21,20 @@ const { Text } = Typography;
 const { TextArea, Search } = Input;
 
 export interface Widget {
-  id: number;
+  id: string;
   type: string;
   content: string;
+  props: any;
 }
 
 export interface CanvasProps {
   onDrop: (widget: any) => void;
-  droppedWidgets: Widget[];
+  widgets: any[];
   isMobileView: boolean;
-  moveWidget: (fromIndex: number, toIndex: number) => void;
+  onMoveWidget: (fromIndex: number, toIndex: number) => void;
   selectedWidgetId: number | null;
-  onSelectWidget: (id: number) => void;
+  onSelectWidget: (id: any) => void;
+  setIsVisualEditMode: () => void;
 }
 
 const SortableWidget: React.FC<{
@@ -75,7 +77,7 @@ const SortableWidget: React.FC<{
   // Drag source
   const [{ isDragging }, drag] = useDrag({
     type: "CANVAS_WIDGET",
-    item: { index },
+    item: { index, widgetType: widget.type },
     collect: (monitor: DragSourceMonitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -111,15 +113,21 @@ const SortableWidget: React.FC<{
 
 const Canvas: React.FC<CanvasProps> = ({
   onDrop,
-  droppedWidgets,
+  widgets,
   isMobileView,
-  moveWidget,
+  onMoveWidget,
   selectedWidgetId,
   onSelectWidget,
+  setIsVisualEditMode,
 }) => {
-  const [{ isOver }, drop] = useDrop({
-    accept: "widget",
-    drop: (item: any) => onDrop(item),
+  const [{ isOver }, dropRef] = useDrop({
+    accept: "WIDGET",
+    drop: (item: any) => {
+      // If item has no index, it's from the library palette
+      if (item.index === undefined && item.widgetType) {
+        onDrop(item.widgetType);
+      }
+    },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
     }),
@@ -129,36 +137,32 @@ const Canvas: React.FC<CanvasProps> = ({
     const mobileStyles = isMobileView
       ? { maxWidth: "100%", fontSize: "14px" }
       : {};
+    const styleProps = widget.props.style || {};
 
     switch (widget.type) {
       case "Button":
         return (
-          <Button type="primary" style={mobileStyles}>
+          <Button type="primary" style={styleProps}>
             {widget.content || "Button"}
           </Button>
         );
 
       case "Image": {
-        const imgSrc = widget.content.startsWith("http")
-          ? widget.content
-          : "https://img.freepik.com/free-vector/bird-colorful-logo-gradient-vector_343694-1365.jpg?semt=ais_hybrid&w=740";
+        const imgSrc =
+          "https://yt3.googleusercontent.com/2eI1TjX447QZFDe6R32K0V2mjbVMKT5mIfQR-wK5bAsxttS_7qzUDS1ojoSKeSP0NuWd6sl7qQ=s900-c-k-c0x00ffffff-no-rj";
         return (
           <img
-            src={imgSrc}
-            alt={widget.content}
+            src={widget.props.src || imgSrc}
+            alt={widget.props.alt || ""}
             className="rounded-lg object-cover"
-            style={{
-              ...mobileStyles,
-              width: isMobileView ? "100%" : 200,
-              height: isMobileView ? "auto" : 150,
-            }}
+            style={styleProps}
           />
         );
       }
 
       case "Text":
         return (
-          <Text style={mobileStyles}>
+          <Text style={styleProps}>
             {widget.content || "Sample text content"}
           </Text>
         );
@@ -175,63 +179,74 @@ const Canvas: React.FC<CanvasProps> = ({
           { key: 3, name: "Charlie", age: 22, country: "Australia" },
         ];
         return (
-          <Table
-            dataSource={dataSource}
-            columns={columns}
-            pagination={false}
-            size="small"
-          />
+          <div style={styleProps}>
+            <Table
+              dataSource={dataSource}
+              columns={columns}
+              pagination={false}
+              size="small"
+            />
+          </div>
         );
       }
 
       case "Form": {
         const [form] = Form.useForm();
         return (
-          <Form
-            form={form}
-            layout="vertical"
-            style={{ maxWidth: 400 }}
-            onFinish={(vals) => console.log("Form submitted:", vals)}
-          >
-            <Form.Item
-              label="Name"
-              name="name"
-              rules={[{ required: true, message: "Name is required" }]}
+          <div style={styleProps}>
+            {" "}
+            <Form
+              form={form}
+              layout="vertical"
+              style={{ maxWidth: 400 }}
+              onFinish={(vals) => console.log("Form submitted:", vals)}
             >
-              <Input placeholder="Enter name" />
-            </Form.Item>
-            <Form.Item
-              label="Email"
-              name="email"
-              rules={[{ type: "email", message: "Invalid email" }]}
-            >
-              <Input placeholder="Enter email" />
-            </Form.Item>
-            <Form.Item label="Comments" name="comments">
-              <TextArea rows={3} placeholder="Enter comments" />
-            </Form.Item>
-            <Form.Item>
-              <Button type="primary" htmlType="submit">
-                Submit
-              </Button>
-            </Form.Item>
-          </Form>
+              <Form.Item
+                label="Name"
+                name="name"
+                rules={[{ required: true, message: "Name is required" }]}
+              >
+                <Input placeholder="Enter name" />
+              </Form.Item>
+              <Form.Item
+                label="Email"
+                name="email"
+                rules={[{ type: "email", message: "Invalid email" }]}
+              >
+                <Input placeholder="Enter email" />
+              </Form.Item>
+              <Form.Item label="Comments" name="comments">
+                <TextArea rows={3} placeholder="Enter comments" />
+              </Form.Item>
+              <Form.Item>
+                <Button type="primary" htmlType="submit">
+                  Submit
+                </Button>
+              </Form.Item>
+            </Form>
+          </div>
         );
       }
 
       case "Calendar":
-        return <Calendar fullscreen={false} />;
+        return (
+          <div style={styleProps}>
+            <Calendar fullscreen={false} />;
+          </div>
+        );
 
       case "SearchBar":
         return (
-          <Space direction="vertical" style={mobileStyles}>
-            <Search
-              placeholder={widget.content || "Search..."}
-              allowClear
-              enterButton
-              style={{ width: isMobileView ? "100%" : 300 }}
-            />
-          </Space>
+          <div style={styleProps}>
+            <Space direction="vertical" style={mobileStyles}>
+              <Search
+                placeholder={widget.content || "Search..."}
+                allowClear
+                enterButton
+                style={{ width: isMobileView ? "100%" : 300 }}
+              />
+            </Space>
+          </div>
         );
 
       case "ImageSlider": {
@@ -249,36 +264,41 @@ const Canvas: React.FC<CanvasProps> = ({
               ];
 
         return (
-          <Carousel autoplay dotPosition="bottom" style={{ maxWidth: 300 }}>
-            {slides.map((src, idx) => (
-              <div
-                key={idx}
-                className="h-40 flex justify-center items-center bg-gray-100"
-              >
-                <img
-                  src={src}
-                  alt={`slide-${idx}`}
-                  style={{
-                    maxWidth: "100%",
-                    maxHeight: "100%",
-                    objectFit: "cover",
-                  }}
-                />
-              </div>
-            ))}
-          </Carousel>
+          <div style={styleProps}>
+            {" "}
+            <Carousel autoplay dotPosition="bottom" style={{ maxWidth: 300 }}>
+              {slides.map((src, idx) => (
+                <div
+                  key={idx}
+                  className="h-40 flex justify-center items-center bg-gray-100"
+                >
+                  <img
+                    src={src}
+                    alt={`slide-${idx}`}
+                    style={{
+                      maxWidth: "100%",
+                      maxHeight: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
+                </div>
+              ))}
+            </Carousel>
+          </div>
         );
       }
 
       default:
-        return <div style={mobileStyles}>{widget.content}</div>;
+        return <div style={styleProps}>{widget.content}</div>;
     }
   };
 
   return (
     <div
-      ref={drop}
-      onClick={() => onSelectWidget(null)}
+      ref={dropRef}
+      onClick={() => {
+        onSelectWidget(null), setIsVisualEditMode;
+      }}
       className={`canvas-area ${isMobileView ? "mobile-canvas" : ""}`}
       style={{
         border: "2px dashed #ccc",
@@ -288,17 +308,17 @@ const Canvas: React.FC<CanvasProps> = ({
         overflow: "auto",
       }}
     >
-      {droppedWidgets.length === 0 ? (
+      {widgets.length === 0 ? (
         <div style={{ textAlign: "center", color: "#888", padding: 20 }}>
           Drag widgets here to start building your site
         </div>
       ) : (
-        droppedWidgets.map((widget, idx) => (
+        widgets?.map((widget, idx) => (
           <SortableWidget
-            key={widget.id}
+            key={widget?.id}
             widget={widget}
             index={idx}
-            moveWidget={moveWidget}
+            moveWidget={onMoveWidget}
             renderWidget={renderWidget}
             selected={widget.id === selectedWidgetId}
             onSelect={() => onSelectWidget(widget.id)}

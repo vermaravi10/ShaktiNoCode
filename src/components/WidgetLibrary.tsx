@@ -1,4 +1,3 @@
-// src/WidgetLibrary.tsx
 import React, { useState, useMemo } from "react";
 import { Input, Typography } from "antd";
 import { useDrag } from "react-dnd";
@@ -23,10 +22,19 @@ interface WidgetDef {
   category: string;
 }
 
-const DraggableWidget: React.FC<WidgetDef> = ({ type, icon, label }) => {
+interface DraggableWidgetProps extends WidgetDef {
+  onClick?: (type: string) => void;
+}
+
+const DraggableWidget: React.FC<DraggableWidgetProps> = ({
+  type,
+  icon,
+  label,
+  onClick,
+}) => {
   const [{ isDragging }, drag] = useDrag(() => ({
-    type: "widget",
-    item: { type, content: `Sample ${type}` },
+    type: "WIDGET",
+    item: { widgetType: type },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -35,7 +43,8 @@ const DraggableWidget: React.FC<WidgetDef> = ({ type, icon, label }) => {
   return (
     <div
       ref={drag}
-      className="mb-2 rounded border border-border p-2 cursor-grab hover:bg-muted transition"
+      onClick={() => onClick?.(type)}
+      className="mb-2 rounded border border-border p-2 cursor-pointer hover:bg-muted transition"
       style={{ opacity: isDragging ? 0.5 : 1 }}
     >
       <div className="flex items-center gap-2 text-foreground">
@@ -46,7 +55,11 @@ const DraggableWidget: React.FC<WidgetDef> = ({ type, icon, label }) => {
   );
 };
 
-const WidgetLibrary: React.FC = () => {
+interface WidgetLibraryProps {
+  onAddWidget: (type: string) => void;
+}
+
+const WidgetLibrary: React.FC<WidgetLibraryProps> = ({ onAddWidget }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const allWidgets: WidgetDef[] = [
@@ -98,14 +111,12 @@ const WidgetLibrary: React.FC = () => {
   const filteredWidgets = useMemo(() => {
     const lower = searchTerm.trim().toLowerCase();
 
-    // Hide SearchBar & ImageSlider when search is empty
     const base = lower
       ? allWidgets
       : allWidgets.filter(
           (w) => w.type !== "SearchBar" && w.type !== "ImageSlider"
         );
 
-    // If there's a search term, further filter by label or category
     return lower
       ? base.filter(
           (w) =>
@@ -123,8 +134,7 @@ const WidgetLibrary: React.FC = () => {
   }, [filteredWidgets]);
 
   return (
-    <div className="flex flex-col h-full bg-background text-foreground">
-      {/* Search Input */}
+    <div className="flex flex-col h-full text-foreground bg-white dark:bg-neutral-800">
       <div className="border-b border-border px-4 py-3">
         <Search
           placeholder="Search widgets..."
@@ -135,7 +145,6 @@ const WidgetLibrary: React.FC = () => {
         />
       </div>
 
-      {/* Widget List */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {Object.keys(groupedWidgets).length === 0 ? (
           <div className="text-muted-foreground text-sm text-center p-5">
@@ -155,6 +164,7 @@ const WidgetLibrary: React.FC = () => {
                     icon={widget.icon}
                     label={widget.label}
                     category={widget.category}
+                    onClick={onAddWidget}
                   />
                 ))}
               </div>

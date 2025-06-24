@@ -49,7 +49,7 @@ const ChatPanel = () => {
   };
 
   return (
-    <div className="chat-panel flex flex-col h-full border-l border-border bg-background text-foreground dark:bg-neutral-900">
+    <div className="chat-panel flex flex-col h-full border-l border-border  text-foreground bg-white dark:bg-neutral-800">
       <div className="p-4 border-b border-border">
         <Text className="text-foreground font-semibold">AI Assistant</Text>
       </div>

@@ -11,6 +11,7 @@ import {
   Sparkles,
   Sun,
   Moon,
+  Palette,
 } from "lucide-react";
 import { Tooltip } from "antd";
 
@@ -19,6 +20,8 @@ interface ToolbarProps {
   onToggleMode: (checked: boolean) => void;
   isMobileView: boolean;
   onToggleMobileView: () => void;
+  isVisualEditMode: boolean;
+  onToggleVisualEditMode: () => void;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -26,6 +29,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onToggleMode,
   isMobileView,
   onToggleMobileView,
+  isVisualEditMode,
+  onToggleVisualEditMode,
 }) => {
   const [theme, setTheme] = React.useState<"light" | "dark">(() => {
     if (typeof window !== "undefined") {
@@ -49,7 +54,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-between w-full px-4 py-2 border-b border-border bg-background text-foreground shadow-sm">
+    <div className="flex items-center justify-between w-full px-4 py-2 border-b border-border  text-foreground shadow-sm">
       {/* Left: Action Buttons */}
       <div className="flex items-center gap-2">
         <Tooltip title="Save">
@@ -104,6 +109,24 @@ const Toolbar: React.FC<ToolbarProps> = ({
               className="data-[state=checked]:bg-black data-[state=unchecked]:bg-gray-300"
             />
           </div>
+        </Tooltip>
+        <Tooltip title="Visual Edit">
+          <Button
+            onClick={onToggleVisualEditMode}
+            size="icon"
+            variant="ghost"
+            className={`rounded-md text-foreground transition-colors ${
+              isVisualEditMode
+                ? "bg-gradient-to-r from-red-500/20 to-pink-500/20 hover:from-red-500/30 hover:to-pink-500/30 ring-2 ring-red-400"
+                : "bg-gradient-to-r from-gray-500/10 to-gray-700/10 hover:from-gray-500/20 hover:to-gray-700/20"
+            }`}
+          >
+            <Palette
+              className={`h-4 w-4 ${
+                isVisualEditMode ? "text-red-400" : "text-gray-400"
+              }`}
+            />
+          </Button>
         </Tooltip>
 
         {/* View Toggle */}

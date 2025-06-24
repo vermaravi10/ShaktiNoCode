@@ -10,9 +10,9 @@
     
 
       --background: 0 0% 100%;
-  --foreground: 240 10% 10%;
-  --border: 240 5% 90%;
-  --muted: 240 4.8% 95.9%;
+--foreground: 222 47% 11%;
+ --border: 220 13% 91%;
+  --muted: 220 10% 50%;
   --primary: 220 90% 56%;
   --accent: 200 100% 60%;
 
@@ -22,12 +22,12 @@
     --secondary: 241 245 249;
     --secondary-foreground: 51 65 85;
     
-    --muted-foreground: 100 116 139;
+  --muted-foreground: 220 10% 30%;
     
     --accent-foreground: 14 116 144;
     
-    --input: 226 232 240;
-    --ring: 99 102 241;
+    --input: 0 0% 100%;
+   --ring: 220 13% 91%;
     --radius: 0.75rem;
   }
 

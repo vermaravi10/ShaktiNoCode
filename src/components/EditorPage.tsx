@@ -6,11 +6,14 @@ import ChatPanel from "./ChatPanel";
 import Toolbar from "./Toolbar";
 import EditorFooter from "./EditorFooter";
 import CodeEditor from "./CodeEditor";
-import { parseWidgetsFromJSX } from "./utils/parseWidgets";
+import parseWidgetsFromJSX from "./utils/parseWidgets";
 
 const { Sider, Content } = Layout;
 const MIN_SIDER = 150;
 const MAX_SIDER = 500;
+
+let idCounter = 1;
+const generateUniqueId = () => idCounter++;
 
 // regenerate the code string from a fresh list of widgets
 function regenerateCodeFromWidgets(
@@ -31,7 +34,7 @@ function regenerateCodeFromWidgets(
 }
 
 const initialCode = `import React from 'react';
-import { Button } from 'antd';
+import { Button, Image, Calendar, Table } from 'antd';
 
 const GeneratedComponent = () => {
   return (
@@ -46,19 +49,220 @@ export default GeneratedComponent;
 
 const EditorPage: React.FC = () => {
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isVisualEditMode, setIsVisualEditMode] = useState(false);
+  console.log("🚀 ~ isVisualEditMode:", isVisualEditMode);
   const [isMobileView, setIsMobileView] = useState(false);
-  const [droppedWidgets, setDroppedWidgets] = useState<Widget[]>([]);
+
   const [code, setCode] = useState<string>(initialCode);
   const [splitRatio, setSplitRatio] = useState(0.5);
   const [leftWidth, setLeftWidth] = useState(300);
   const [rightWidth, setRightWidth] = useState(300);
-  const [selectedWidgetId, setSelectedWidgetId] = useState<number | null>(null);
-  console.log("🚀 ~ selectedWidgetId:", selectedWidgetId);
 
   const monacoRef = useRef<any>(null);
   const dragging = useRef<null | "left" | "right" | "split">(null);
 
-  // resize handlers…
+  const [widgets, setWidgets] = useState(() =>
+    parseWidgetsFromJSX(initialCode)
+  );
+  console.log("🚀 ~ widgets:", widgets);
+
+  const [selectedWidgetId, setSelectedWidgetId] = useState<any | null>(null);
+  console.log("🚀 ~ selectedWidgetId:", selectedWidgetId);
+  const selectedWidgetIdRef = useRef<any | null>(null);
+
+  const handleSelectWidget = (widgetId: string) => {
+    setSelectedWidgetId(widgetId);
+    selectedWidgetIdRef.current = widgetId;
+  };
+  const handleEditMode = () => {
+    setIsVisualEditMode(false);
+  };
+
+  // Handle code editor changes: parse new code to update widget list
+  const handleCodeChange = (newCode: string) => {
+    setCode(newCode);
+    try {
+      const newWidgets = parseWidgetsFromJSX(newCode);
+      setWidgets(newWidgets);
+      // Reset selection if the previously selected widget is gone after code edit
+      if (
+        selectedWidgetId &&
+        !newWidgets.find((w) => w.id === selectedWidgetId)
+      ) {
+        setSelectedWidgetId(null);
+        selectedWidgetIdRef.current = null;
+      }
+    } catch (err) {
+      console.error("Error parsing code:", err);
+      // In case of parse error, we can choose to keep last known good state
+    }
+  };
+
+  // Generate JSX code string from the widget list state (includes imports and component wrapper)
+  const generateCodeFromWidgets = (widgetList: typeof widgets): string => {
+    // Determine which Ant Design components need to be imported
+    const importSet = new Set<string>();
+    widgetList.forEach((w) => {
+      if (["Button", "Image", "Table", "Calendar"].includes(w.type)) {
+        importSet.add(w.type);
+      }
+    });
+    // Build import statements
+    let importLines = `import React from 'react';\n`;
+    if (importSet.size > 0) {
+      importLines += `import { ${Array.from(importSet).join(
+        ", "
+      )} } from 'antd';\n`;
+    }
+    importLines += "\n";
+
+    // Start component code
+    let componentCode = `const GeneratedComponent = () => {\n  return (\n    <div style={{ padding: '20px' }}>\n`;
+    // Add JSX for each widget
+    for (const widget of widgetList) {
+      const { type, props, content } = widget;
+      // Build attributes string for JSX
+      let attrStr = "";
+      if (props.style && Object.keys(props.style).length > 0) {
+        // Convert style object to inline style JSX
+        const stylePairs: string[] = [];
+        for (const [key, val] of Object.entries(props.style)) {
+          if (typeof val === "string") {
+            stylePairs.push(`${key}: '${val}'`);
+          } else {
+            stylePairs.push(`${key}: ${val}`);
+          }
+        }
+        attrStr += ` style={{ ${stylePairs.join(", ")} }}`;
+      }
+      if (props.src) {
+        attrStr += ` src="${props.src}"`;
+      }
+      if (props.alt) {
+        attrStr += ` alt="${props.alt}"`;
+      }
+
+      if (type === "Image" || type === "img") {
+        componentCode += `      <${type}${attrStr} />\n`;
+      } else {
+        const innerText = content || "";
+        componentCode += `      <${type}${attrStr}>${innerText}</${type}>\n`;
+      }
+    }
+    componentCode += `    </div>\n  );\n};\n\nexport default GeneratedComponent;\n`;
+
+    return importLines + componentCode;
+  };
+
+  const handleAddWidget = (widgetType: string) => {
+    const newWidgets = [...widgets];
+
+    const newWidget: any = {
+      id: generateUniqueId(),
+      type: widgetType,
+      props: { style: {} } as any,
+      content: "",
+    };
+    switch (widgetType) {
+      case "Button":
+        newWidget.content = "Sample Button";
+        break;
+      case "Text":
+        newWidget.content = "Sample Text";
+        break;
+      case "Image":
+        newWidget.props.src =
+          "data:image/png;base64,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";
+        newWidget.props.alt = "Sample Image";
+        newWidget.content = "";
+        break;
+      case "Table":
+        newWidget.content = "Sample Table";
+        break;
+      case "Calendar":
+        newWidget.content = "Sample Calendar";
+        break;
+    }
+    newWidgets.push(newWidget);
+    setWidgets(newWidgets);
+
+    const newCode = generateCodeFromWidgets(newWidgets);
+    setCode(newCode);
+  };
+
+  const handleMoveWidget = (fromIndex: number, toIndex: number) => {
+    const updatedList = [...widgets];
+    const [moved] = updatedList.splice(fromIndex, 1);
+    updatedList.splice(toIndex, 0, moved);
+    setWidgets(updatedList);
+
+    const newCode = generateCodeFromWidgets(updatedList);
+    setCode(newCode);
+  };
+
+  const handleStyleChange = (field: string, value: string) => {
+    setWidgets((prevWidgets) => {
+      const updated = prevWidgets.map((w) => {
+        if (w.id === selectedWidgetId) {
+          // Style fields
+          if (
+            [
+              "height",
+              "width",
+              "padding",
+              "margin",
+              "color",
+              "fontSize",
+              "fontWeight",
+              "backgroundColor",
+            ].includes(field)
+          ) {
+            const newStyle = { ...w.props.style, [field]: value };
+            return { ...w, props: { ...w.props, style: newStyle } };
+          }
+
+          // Other editable props
+          if (field === "src" || field === "alt") {
+            return { ...w, props: { ...w.props, [field]: value } };
+          }
+
+          // Content / innerText update
+          if (field === "content") {
+            return { ...w, content: value };
+          }
+        }
+        return w;
+      });
+
+      const newCode = generateCodeFromWidgets(updated);
+      setCode(newCode);
+      return updated;
+    });
+  };
+
+  const handleArrayChange = (field: string, index: number, value: string) => {
+    setWidgets((prevWidgets) => {
+      const updated = prevWidgets.map((w) => {
+        if (w.id === selectedWidgetId) {
+          const existing = w.props[field] || [];
+          const newArray = [...existing];
+          newArray[index] = value;
+          return {
+            ...w,
+            props: {
+              ...w.props,
+              [field]: newArray,
+            },
+          };
+        }
+        return w;
+      });
+
+      setCode(generateCodeFromWidgets(updated));
+      return updated;
+    });
+  };
+
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (dragging.current === "split") {
@@ -83,64 +287,47 @@ const EditorPage: React.FC = () => {
     };
   }, []);
 
-  // Delete key listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Delete" && selectedWidgetId !== null) {
-        setDroppedWidgets((ws) => ws.filter((w) => w.id !== selectedWidgetId));
+      if (
+        (e.key === "Backspace" || e.key === "Delete") &&
+        selectedWidgetIdRef.current !== null
+      ) {
+        setWidgets((prev) => {
+          const updated = prev.filter(
+            (w) => w.id !== selectedWidgetIdRef.current
+          );
+          setCode(generateCodeFromWidgets(updated));
+          return updated;
+        });
         setSelectedWidgetId(null);
+        selectedWidgetIdRef.current = null;
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedWidgetId]);
-
-  const handleDrop = (widget: any) => {
-    // 1️⃣ update canvas state
-    const nw: Widget = {
-      id: Date.now(),
-      type: widget.type,
-      content: widget.content,
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
     };
-    setDroppedWidgets((ws) => [...ws, nw]);
-
-    // 2️⃣ inject JSX into code
-    const snippet = `      <${widget.type}>${widget.content}</${widget.type}>\n`;
-    const newCode = code.replace(
-      "{/* Your generated components will appear here */}",
-      `{/* Your generated components will appear here */}\n${snippet}`
-    );
-    setCode(newCode);
-  };
-
-  const moveWidget = (from: number, to: number) => {
-    setDroppedWidgets((ws) => {
-      const copy = [...ws];
-      const [moved] = copy.splice(from, 1);
-      copy.splice(to, 0, moved);
-
-      const newCode = regenerateCodeFromWidgets(copy, code);
-      setCode(newCode);
-
-      return copy;
-    });
-  };
+  }, []);
 
   return (
-    <Layout className="editor-layout bg-background dark:bg-black h-screen">
+    <Layout className="editor-layout bg-white dark:bg-neutral-800 h-screen">
       <Toolbar
         isEditMode={isEditMode}
+        isVisualEditMode={isVisualEditMode}
+        onToggleVisualEditMode={() => setIsVisualEditMode((v) => !v)}
         onToggleMode={() => setIsEditMode((m) => !m)}
         isMobileView={isMobileView}
         onToggleMobileView={() => setIsMobileView((v) => !v)}
       />
 
-      <Layout className="flex flex-row flex-1 overflow-hidden">
+      <Layout className="flex flex-row flex-1 overflow-hidden ">
         <Sider
           width={isEditMode ? 0 : leftWidth}
-          className="h-full transition-all duration-200 overflow-hidden bg-background border-r border-border"
+          className="h-full transition-all duration-200 overflow-hidden border-r border-border "
         >
-          <WidgetLibrary />
+          <WidgetLibrary onAddWidget={handleAddWidget} />
         </Sider>
         {!isEditMode && (
           <div
@@ -149,7 +336,7 @@ const EditorPage: React.FC = () => {
           />
         )}
 
-        <Content className="flex flex-col flex-1 overflow-hidden">
+        <Content className="flex flex-col flex-1 overflow-hidden bg-white dark:bg-neutral-800">
           {isEditMode ? (
             <div className="flex flex-col flex-1 p-4">
               {/* Canvas */}
@@ -158,20 +345,21 @@ const EditorPage: React.FC = () => {
                 style={{ height: `${splitRatio * 100}vh` }}
               >
                 <Canvas
-                  onDrop={handleDrop}
-                  droppedWidgets={droppedWidgets}
+                  onDrop={handleAddWidget}
+                  widgets={widgets}
                   isMobileView={isMobileView}
-                  moveWidget={moveWidget}
+                  onMoveWidget={handleMoveWidget}
                   selectedWidgetId={selectedWidgetId}
-                  onSelectWidget={setSelectedWidgetId}
+                  onSelectWidget={handleSelectWidget}
+                  setIsVisualEditMode={handleEditMode}
                 />
               </div>
-              {/* Splitter */}
+
               <div
                 onMouseDown={() => (dragging.current = "split")}
                 className="h-1 bg-border cursor-row-resize"
               />
-              {/* Code Editor */}
+
               <div
                 className="overflow-auto"
                 style={{ height: `${(1 - splitRatio) * 100}vh` }}
@@ -179,15 +367,16 @@ const EditorPage: React.FC = () => {
                 <CodeEditor
                   ref={monacoRef}
                   code={code}
-                  onCodeChange={(newVal) => {
-                    setCode(newVal);
-                    setDroppedWidgets(parseWidgetsFromJSX(newVal));
-                  }}
+                  // onCodeChange={(newVal) => {
+                  //   setCode(newVal);
+                  //   setWidgets(parseWidgetsFromJSX(newVal));
+                  // }}
+                  onCodeChange={handleCodeChange}
                 />
               </div>
             </div>
           ) : (
-            <div className="relative flex justify-center items-start overflow-hidden h-full bg-background text-foreground">
+            <div className="relative flex justify-center items-start overflow-hidden h-full bg-white dark:bg-neutral-800 text-foreground">
               <div
                 className={`w-full h-full ${
                   isMobileView
@@ -196,12 +385,13 @@ const EditorPage: React.FC = () => {
                 }`}
               >
                 <Canvas
-                  onDrop={handleDrop}
-                  droppedWidgets={droppedWidgets}
+                  onDrop={handleAddWidget}
+                  widgets={widgets}
                   isMobileView={isMobileView}
-                  moveWidget={moveWidget}
+                  onMoveWidget={handleMoveWidget}
                   selectedWidgetId={selectedWidgetId}
-                  onSelectWidget={setSelectedWidgetId}
+                  onSelectWidget={handleSelectWidget}
+                  setIsVisualEditMode={handleEditMode}
                 />
               </div>
             </div>
@@ -216,9 +406,243 @@ const EditorPage: React.FC = () => {
         )}
         <Sider
           width={isEditMode ? 0 : rightWidth}
-          className="h-full transition-all duration-200 overflow-hidden bg-white dark:bg-neutral-800 border-l border-border"
+          className="h-full transition-all duration-200 overflow-hidden border-l border-border bg-white dark:bg-neutral-800 "
         >
-          <ChatPanel />
+          {selectedWidgetId && isVisualEditMode ? (
+            <div className="w-[300px] max-h-[85vh] overflow-y-auto p-4 bg-card  shadow-md space-y-4">
+              <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-2">
+                Visual Edits
+              </h3>
+
+              {(() => {
+                const widget = widgets?.find((w) => w.id === selectedWidgetId);
+                if (!widget) return null;
+                const style = widget.props.style || {};
+                const inputClass =
+                  "w-full px-3 py-2 rounded-md border border-border bg-input dark:bg-neutral-600 dark:text-white text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring";
+
+                const renderInput = (
+                  label: any,
+                  field: any,
+                  value: any = "",
+                  placeholder?: any
+                ) => (
+                  <div key={field}>
+                    <label className="block text-xs text-foreground mb-1">
+                      {label}
+                    </label>
+                    <input
+                      type="text"
+                      value={value || ""}
+                      onChange={(e) => handleStyleChange(field, e.target.value)}
+                      className={inputClass}
+                      placeholder={placeholder}
+                    />
+                  </div>
+                );
+
+                const renderImageInput = (
+                  label: any,
+                  field: any,
+                  index: any,
+                  value: any
+                ) => (
+                  <div key={`${field}-${index}`}>
+                    <label className="block text-xs text-foreground mb-1">
+                      {label}
+                    </label>
+                    <input
+                      type="text"
+                      value={value}
+                      onChange={(e) =>
+                        handleArrayChange(field, index, e.target.value)
+                      }
+                      className={inputClass}
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
+                );
+
+                // Common fields for all widgets
+                type Field = {
+                  label: string;
+                  field: string;
+                  value: any;
+                  placeholder?: string;
+                  customRender?: () => React.ReactNode;
+                };
+
+                const fields: Field[] = [
+                  {
+                    label: "Height",
+                    field: "height",
+                    value: style.height,
+                    placeholder: "e.g. 40px",
+                  },
+                  {
+                    label: "Width",
+                    field: "width",
+                    value: style.width,
+                    placeholder: "e.g. 100%",
+                  },
+                  {
+                    label: "Padding",
+                    field: "padding",
+                    value: style.padding,
+                    placeholder: "e.g. 8px 12px",
+                  },
+                  {
+                    label: "Margin",
+                    field: "margin",
+                    value: style.margin,
+                    placeholder: "e.g. 0 auto",
+                  },
+                  {
+                    label: "Background Color",
+                    field: "backgroundColor",
+                    value: style.backgroundColor,
+                    placeholder: "e.g. #fff",
+                  },
+                ];
+
+                // Widget-specific additions
+                if (widget.type === "Text") {
+                  fields.push(
+                    {
+                      label: "Text Content",
+                      field: "content",
+                      value: widget.content,
+                      placeholder: "e.g. Hello world",
+                    },
+                    {
+                      label: "Text Color",
+                      field: "color",
+                      value: style.color,
+                      placeholder: "e.g. #222",
+                    },
+                    {
+                      label: "Font Size",
+                      field: "fontSize",
+                      value: style.fontSize,
+                      placeholder: "e.g. 16px",
+                    },
+                    {
+                      label: "Font Weight",
+                      field: "fontWeight",
+                      value: style.fontWeight,
+                      placeholder: "e.g. 400 or bold",
+                    }
+                  );
+                }
+
+                if (widget.type?.toLowerCase() === "imageslider") {
+                  const images = widget.props.images || ["", "", ""];
+
+                  fields.push(
+                    {
+                      label: "Image 1 URL",
+                      field: "images[0]",
+                      value: images[0] || "",
+                      customRender: () =>
+                        renderImageInput(
+                          "Image 1 URL",
+                          "images",
+                          0,
+                          images[0] || ""
+                        ),
+                    },
+                    {
+                      label: "Image 2 URL",
+                      field: "images[1]",
+                      value: images[1] || "",
+                      customRender: () =>
+                        renderImageInput(
+                          "Image 2 URL",
+                          "images",
+                          1,
+                          images[1] || ""
+                        ),
+                    },
+                    {
+                      label: "Image 3 URL",
+                      field: "images[2]",
+                      value: images[2] || "",
+                      customRender: () =>
+                        renderImageInput(
+                          "Image 3 URL",
+                          "images",
+                          2,
+                          images[2] || ""
+                        ),
+                    }
+                  );
+                }
+
+                if (widget.type === "Image") {
+                  fields.push({
+                    label: "Image URL",
+                    field: "src",
+                    value: widget.props.src,
+                    placeholder: "https://...",
+                  });
+                }
+
+                if (widget.type === "Button") {
+                  fields.push(
+                    {
+                      label: "Label",
+                      field: "content",
+                      value: widget.content || "",
+                      placeholder: "Click me",
+                    },
+                    {
+                      label: "Text Color",
+                      field: "color",
+                      value: style.color || "",
+                      placeholder: "e.g. white",
+                    },
+                    {
+                      label: "Font Weight",
+                      field: "fontWeight",
+                      value: style.fontWeight || "",
+                      placeholder: "e.g. 600",
+                    },
+                    {
+                      label: "Font Size",
+                      field: "fontSize",
+                      value: style.fontSize || "",
+                      placeholder: "e.g. 14px",
+                    }
+
+                    // {
+                    //   label: "Border Radius",
+                    //   field: "borderRadius",
+                    //   value: style.borderRadius || "",
+                    //   placeholder: "e.g. 6px",
+                    // },
+                    // {
+                    //   label: "Border",
+                    //   field: "border",
+                    //   value: style.border || "",
+                    //   placeholder: "e.g. 1px solid #ccc",
+                    // }
+                  );
+                }
+
+                return (
+                  <div className="space-y-4">
+                    {fields.map((f) =>
+                      f.customRender
+                        ? f.customRender()
+                        : renderInput(f.label, f.field, f.value, f.placeholder)
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          ) : (
+            <ChatPanel />
+          )}
         </Sider>
       </Layout>
 

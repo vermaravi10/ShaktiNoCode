@@ -5,7 +5,7 @@ const { Footer } = Layout;
 
 const EditorFooter: React.FC = () => {
   return (
-    <Footer className="border-t border-border bg-background text-foreground px-4 h-[50px] flex items-center">
+    <Footer className="border-t border-border bg-white dark:bg-neutral-800 text-foreground px-4 h-[50px] flex items-center">
       <Breadcrumb
         separator={
           <span className="text-muted-foreground dark:text-foreground">›</span>

@@ -201,19 +201,6 @@ const LandingPage = () => {
                 </div>
               )}
 
-              {/* <textarea
-                placeholder={placeholder}
-                className="w-full resize-none bg-transparent text-white placeholder-gray-400 focus:outline-none"
-                rows={3}
-                value={promptText}
-                onChange={(e) => setPromptText(e.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    handleGetStarted();
-                  }
-                }}
-              /> */}
               <div className="w-full bg-transparent text-white placeholder-gray-400 focus:outline-none">
                 <div className="w-full resize-none bg-transparent text-white placeholder-gray-400 focus:outline-none">
                   <textarea
@@ -298,7 +285,6 @@ const LandingPage = () => {
                 +
               </button>
 
-              {/* new “add file” button next to + */}
               <button
                 type="button"
                 onClick={() => setLinkInputVisible(true)}
@@ -312,7 +298,6 @@ const LandingPage = () => {
                   ref={dropdownRef}
                   className="absolute bottom-10 left-0 bg-[#222] border border-gray-700 rounded-xl text-sm shadow-lg flex flex-col overflow-hidden z-10"
                 >
-                  {/* 🎨 Add Figma */}
                   <button
                     type="button"
                     onClick={handleFileUploadClick}
@@ -320,7 +305,7 @@ const LandingPage = () => {
                   >
                     🎨 Add Figma
                   </button>
-                  {/* 🔗 Add Link */}
+
                   <button
                     type="button"
                     onClick={handleFileUploadClick}
@@ -341,7 +326,7 @@ const LandingPage = () => {
                 ref={buttonRef}
                 onClick={() => {
                   setShowVisibilityOptions((prev) => !prev);
-                  setShowOptions(false); // 👈 this ensures "+" options close
+                  setShowOptions(false);
                 }}
               >
                 <div className="flex items-center gap-1 duration-200 animate-in fade-in">
@@ -405,7 +390,6 @@ const LandingPage = () => {
                 type="button"
                 className="h-8 w-8 rounded-full border border-white flex items-center justify-center hover:bg-white hover:text-black transition"
                 aria-label="Voice"
-                // onClick={handleVoice}
               >
                 <AudioOutlined />
               </button>

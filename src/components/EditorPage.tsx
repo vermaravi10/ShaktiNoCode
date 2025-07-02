@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Layout } from "antd";
 import WidgetLibrary from "./WidgetLibrary";
 import Canvas, { Widget } from "./Canvas";
@@ -9,6 +9,7 @@ import CodeEditor from "./CodeEditor";
 import parseWidgetsFromJSX from "./utils/parseWidgets";
 import { useEditor } from "@/context/EditorContext";
 import VisualEditor from "./VisualEditor";
+import { debounce } from "lodash";
 
 const { Sider, Content } = Layout;
 const MIN_SIDER = 150;
@@ -16,38 +17,6 @@ const MAX_SIDER = 500;
 
 let idCounter = 1;
 const generateUniqueId = () => idCounter++;
-
-// regenerate the code string from a fresh list of widgets
-function regenerateCodeFromWidgets(
-  widgets: Widget[],
-  template: string
-): string {
-  const [before, after] = template.split(
-    "{/* Your generated components will appear here */}"
-  );
-  const lines = widgets.map((w) => `      <${w.type}>${w.content}</${w.type}>`);
-  return (
-    before +
-    "{/* Your generated components will appear here */}\n" +
-    lines.join("\n") +
-    "\n" +
-    after
-  );
-}
-
-const initialCode = `import React from 'react';
-import { Button, Image, Calendar, Table } from 'antd';
-
-const GeneratedComponent = () => {
-  return (
-    <div style={{ padding: '20px' }}>
-      {/* Your generated components will appear here */}
-    </div>
-  );
-};
-
-export default GeneratedComponent;
-`;
 
 const EditorPage: React.FC = () => {
   const [isMobileView, setIsMobileView] = useState(false);
@@ -68,10 +37,6 @@ const EditorPage: React.FC = () => {
     setWidgets,
     selectedWidgetId,
     setSelectedWidgetId,
-    theme,
-    setTheme,
-    zoom,
-    setZoom,
     isEditMode,
     setIsEditMode,
     isVisualEditMode,
@@ -86,36 +51,39 @@ const EditorPage: React.FC = () => {
     setIsVisualEditMode(false);
   };
 
-  // Handle code editor changes: parse new code to update widget list
+  const tryParseAndUpdate = useCallback(
+    debounce((newCode: string, prevWidgets) => {
+      let nextWidgets;
+      try {
+        nextWidgets = parseWidgetsFromJSX(newCode);
+        console.log("🚀 ~ debounce ~ nextWidgets:", nextWidgets);
+      } catch (err) {
+        console.log("🚀 ~ debounce ~ err:", err);
+
+        return;
+      }
+
+      if (nextWidgets.length > 0) {
+        console.log(nextWidgets, "nextwidgets");
+        setWidgets(nextWidgets);
+      }
+    }, 300),
+    []
+  );
+
   const handleCodeChange = (newCode: string) => {
     setCode(newCode);
-    try {
-      const newWidgets = parseWidgetsFromJSX(newCode);
-      setWidgets(newWidgets);
-      // Reset selection if the previously selected widget is gone after code edit
-      if (
-        selectedWidgetId &&
-        !newWidgets.find((w) => w.id === selectedWidgetId)
-      ) {
-        setSelectedWidgetId(null);
-        selectedWidgetIdRef.current = null;
-      }
-    } catch (err) {
-      console.error("Error parsing code:", err);
-      // In case of parse error, we can choose to keep last known good state
-    }
+    tryParseAndUpdate(newCode, widgets);
   };
 
-  // Generate JSX code string from the widget list state (includes imports and component wrapper)
   const generateCodeFromWidgets = (widgetList: typeof widgets): string => {
-    // Determine which Ant Design components need to be imported
     const importSet = new Set<string>();
     widgetList.forEach((w) => {
       if (["Button", "Image", "Table", "Calendar"].includes(w.type)) {
         importSet.add(w.type);
       }
     });
-    // Build import statements
+
     let importLines = `import React from 'react';\n`;
     if (importSet.size > 0) {
       importLines += `import { ${Array.from(importSet).join(
@@ -124,15 +92,13 @@ const EditorPage: React.FC = () => {
     }
     importLines += "\n";
 
-    // Start component code
     let componentCode = `const GeneratedComponent = () => {\n  return (\n    <div style={{ padding: '20px' }}>\n`;
-    // Add JSX for each widget
+
     for (const widget of widgetList) {
       const { type, props, content } = widget;
-      // Build attributes string for JSX
+
       let attrStr = "";
       if (props.style && Object.keys(props.style).length > 0) {
-        // Convert style object to inline style JSX
         const stylePairs: string[] = [];
         for (const [key, val] of Object.entries(props.style)) {
           if (typeof val === "string") {
@@ -296,10 +262,6 @@ const EditorPage: React.FC = () => {
                 <CodeEditor
                   ref={monacoRef}
                   code={code}
-                  // onCodeChange={(newVal) => {
-                  //   setCode(newVal);
-                  //   setWidgets(parseWidgetsFromJSX(newVal));
-                  // }}
                   onCodeChange={handleCodeChange}
                 />
               </div>

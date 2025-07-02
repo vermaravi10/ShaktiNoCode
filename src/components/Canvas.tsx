@@ -1,4 +1,3 @@
-// src/Canvas.tsx
 import React, { useEffect, useRef } from "react";
 import {
   useDrop,
@@ -48,7 +47,6 @@ const SortableWidget: React.FC<{
 }> = ({ widget, index, moveWidget, renderWidget, selected, onSelect }) => {
   const ref = useRef<HTMLDivElement>(null);
 
-  // Reordering drop target
   const [, drop] = useDrop({
     accept: "CANVAS_WIDGET",
     hover(item: { index: number }, monitor: DropTargetMonitor) {
@@ -75,7 +73,6 @@ const SortableWidget: React.FC<{
     },
   });
 
-  // Drag source
   const [{ isDragging }, drag] = useDrag({
     type: "CANVAS_WIDGET",
     item: { index, widgetType: widget.type },
@@ -114,25 +111,13 @@ const SortableWidget: React.FC<{
 
 const Canvas: React.FC<CanvasProps> = ({
   onDrop,
-
   isMobileView,
   onMoveWidget,
-
   onSelectWidget,
   setIsVisualEditMode,
 }) => {
-  const {
-    code,
-    setCode,
-    widgets,
-    setWidgets,
-    selectedWidgetId,
-    setSelectedWidgetId,
-    theme,
-    setTheme,
-    zoom,
-    setZoom,
-  } = useEditor();
+  const { widgets, setWidgets, selectedWidgetId, setSelectedWidgetId } =
+    useEditor();
 
   const [{ isOver }, dropRef] = useDrop({
     accept: "WIDGET",
@@ -368,7 +353,15 @@ const Canvas: React.FC<CanvasProps> = ({
       }
 
       default:
-        return <div style={styleProps}>{widget.content}</div>;
+        const { style, ...restProps } = widget.props || {};
+
+        const Tag = widget.type as keyof JSX.IntrinsicElements;
+
+        return React.createElement(
+          Tag,
+          { style: styleProps, ...restProps },
+          widget.content
+        );
     }
   };
 

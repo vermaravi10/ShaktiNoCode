@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useState,
   ReactNode,
+  useCallback,
 } from "react";
 import parseWidgetsFromJSX from "@/components/utils/parseWidgets";
 
@@ -20,11 +21,20 @@ export type Widget = {
   content: string;
 };
 
+export interface HistoryEntry {
+  widgets: Widget[];
+  code: string;
+}
+
 type EditorContextType = {
   code: string;
   setCode: (code: string) => void;
-  widgets: any;
+  widgets: Widget[];
   setWidgets: (widgets: any) => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
   selectedWidgetId: string | null;
   setSelectedWidgetId: (id: string | null) => void;
   theme: "light" | "dark";
@@ -33,12 +43,12 @@ type EditorContextType = {
   setZoom: (zoom: number) => void;
   isEditMode: boolean;
   setIsEditMode: (val: any) => void;
-  isVisualEditMode: boolean;
+  isVisualEditMode: any;
   setIsVisualEditMode: (val: any) => void;
+  reset: () => void;
 };
 
 const EditorContext = createContext<EditorContextType | null>(null);
-
 const STORAGE_KEY = "editor-full-state";
 
 const defaultCode = `import React from 'react';
@@ -47,7 +57,7 @@ import { Button } from 'antd';
 const GeneratedComponent = () => {
   return (
     <div style={{ padding: '20px' }}>
-      <Button>Click me</Button>
+      
     </div>
   );
 };
@@ -55,31 +65,111 @@ const GeneratedComponent = () => {
 export default GeneratedComponent;`;
 
 export const EditorProvider = ({ children }: { children: ReactNode }) => {
-  const [code, setCode] = useState<string>(defaultCode);
-  const [widgets, setWidgets] = useState<any>([]);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [pointer, setPointer] = useState<number>(-1);
+  const [codeRaw, setCodeRaw] = useState<string>(defaultCode);
+  const [widgetsRaw, setWidgetsRaw] = useState<Widget[]>(() =>
+    parseWidgetsFromJSX(defaultCode)
+  );
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [zoom, setZoom] = useState<number>(1);
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [isVisualEditMode, setIsVisualEditMode] = useState<boolean>(false);
 
+  const record = useCallback(
+    (newWidgets: Widget[], newCode: string) => {
+      const next = history.slice(0, pointer + 1);
+      next.push({ widgets: newWidgets, code: newCode });
+      setHistory(next);
+      setPointer(next.length - 1);
+    },
+    [history, pointer]
+  );
+
+  const setWidgets = (newWidgets: Widget[]) => {
+    setWidgetsRaw(newWidgets);
+    record(newWidgets, codeRaw);
+  };
+
+  const setCode = (newCode: string) => {
+    setCodeRaw(newCode);
+    record(widgetsRaw, newCode);
+  };
+
+  const undo = () => {
+    if (pointer <= 0) return;
+    const prev = history[pointer - 1];
+    setPointer(pointer - 1);
+    setWidgetsRaw(prev.widgets);
+    setCodeRaw(prev.code);
+  };
+  const redo = () => {
+    if (pointer >= history.length - 1) return;
+    const nextEntry = history[pointer + 1];
+    setPointer(pointer + 1);
+    setWidgetsRaw(nextEntry.widgets);
+    setCodeRaw(nextEntry.code);
+  };
+
+  const canUndo = pointer > 0;
+  const canRedo = pointer < history.length - 1;
+
+  const reset = () => {
+    setCodeRaw(defaultCode);
+    setWidgetsRaw(parseWidgetsFromJSX(defaultCode));
+    setSelectedWidgetId(null);
+    setTheme("light");
+    setZoom(1);
+    setIsEditMode(false);
+    setIsVisualEditMode(false);
+
+    setHistory([
+      { widgets: parseWidgetsFromJSX(defaultCode), code: defaultCode },
+    ]);
+    setPointer(0);
+    localStorage.removeItem(STORAGE_KEY);
+  };
+
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        setCode(parsed.code ?? defaultCode);
-        setWidgets(parsed.widgets ?? []);
+
+        setCodeRaw(parsed.code ?? defaultCode);
+        setWidgetsRaw(parsed.widgets ?? parseWidgetsFromJSX(defaultCode));
         setSelectedWidgetId(parsed.selectedWidgetId ?? null);
         setTheme(parsed.theme ?? "light");
         setZoom(parsed.zoom ?? 1);
         setIsEditMode(parsed.isEditMode ?? false);
         setIsVisualEditMode(parsed.isVisualEditMode ?? false);
-      } catch (err) {
-        console.error("Failed to parse editor state:", err);
+
+        if (parsed.history && Array.isArray(parsed.history)) {
+          setHistory(parsed.history);
+          setPointer(
+            typeof parsed.pointer === "number"
+              ? parsed.pointer
+              : parsed.history.length - 1
+          );
+        } else {
+          const initial = {
+            widgets: parsed.widgets ?? parseWidgetsFromJSX(defaultCode),
+            code: parsed.code ?? defaultCode,
+          };
+          setHistory([initial]);
+          setPointer(0);
+        }
+      } catch {
+        console.error("Failed to restore editor state");
       }
     } else {
-      setWidgets(parseWidgetsFromJSX(defaultCode));
+      const initial = {
+        widgets: parseWidgetsFromJSX(defaultCode),
+        code: defaultCode,
+      };
+      setHistory([initial]);
+      setPointer(0);
     }
   }, []);
 
@@ -87,32 +177,40 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
-        code,
-        widgets,
+        code: codeRaw,
+        widgets: widgetsRaw,
         selectedWidgetId,
         theme,
         zoom,
         isEditMode,
         isVisualEditMode,
+        history,
+        pointer,
       })
     );
   }, [
-    code,
-    widgets,
+    codeRaw,
+    widgetsRaw,
     selectedWidgetId,
     theme,
     zoom,
     isEditMode,
     isVisualEditMode,
+    history,
+    pointer,
   ]);
 
   return (
     <EditorContext.Provider
       value={{
-        code,
+        code: codeRaw,
         setCode,
-        widgets,
+        widgets: widgetsRaw,
         setWidgets,
+        undo,
+        redo,
+        canUndo,
+        canRedo,
         selectedWidgetId,
         setSelectedWidgetId,
         theme,
@@ -123,6 +221,7 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
         setIsEditMode,
         isVisualEditMode,
         setIsVisualEditMode,
+        reset,
       }}
     >
       {children}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -15,6 +15,8 @@ import {
   Home,
 } from "lucide-react";
 import { Tooltip } from "antd";
+import { useEditor } from "@/context/EditorContext";
+import { CloseSquareOutlined } from "@ant-design/icons";
 
 interface ToolbarProps {
   isEditMode: boolean;
@@ -33,6 +35,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
   isVisualEditMode,
   onToggleVisualEditMode,
 }) => {
+  const { undo, redo, canUndo, canRedo, reset } = useEditor();
+
   const [theme, setTheme] = React.useState<"light" | "dark">(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("theme") === "dark" ? "dark" : "light";
@@ -40,7 +44,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
     return "light";
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     const root = document.documentElement;
     if (theme === "dark") {
       root.classList.add("dark");
@@ -93,6 +97,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
             size="icon"
             variant="ghost"
             className="text-foreground hover:bg-muted rounded-md"
+            onClick={undo}
+            disabled={!canUndo}
           >
             <Undo className="h-4 w-4" />
           </Button>
@@ -103,8 +109,20 @@ const Toolbar: React.FC<ToolbarProps> = ({
             size="icon"
             variant="ghost"
             className="text-foreground hover:bg-muted rounded-md"
+            onClick={redo}
+            disabled={!canRedo}
           >
             <Redo className="h-4 w-4" />
+          </Button>
+        </Tooltip>
+        <Tooltip title="Reset">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="text-foreground hover:bg-muted rounded-md"
+            onClick={reset}
+          >
+            <CloseSquareOutlined className="h-4 w-4 rotate-180" />
           </Button>
         </Tooltip>
       </div>

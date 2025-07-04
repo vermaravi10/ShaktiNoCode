@@ -29,10 +29,8 @@ export interface Widget {
 
 export interface CanvasProps {
   onDrop: (widget: any) => void;
-
   isMobileView: boolean;
   onMoveWidget: (fromIndex: number, toIndex: number) => void;
-
   onSelectWidget: (id: any) => void;
   setIsVisualEditMode: () => void;
 }
@@ -102,6 +100,8 @@ const SortableWidget: React.FC<{
         borderRadius: 4,
         padding: 8,
         background: selected ? "#e6f7ff" : "#fff",
+        flexShrink: 0,
+        width: "100%",
       }}
     >
       {renderWidget(widget)}
@@ -119,35 +119,28 @@ const Canvas: React.FC<CanvasProps> = ({
   const { widgets, setWidgets, selectedWidgetId, setSelectedWidgetId } =
     useEditor();
 
-  const [{ isOver }, dropRef] = useDrop({
+  const [, dropRef] = useDrop({
     accept: "WIDGET",
     drop: (item: any) => {
-      // If item has no index, it's from the library palette
       if (item.index === undefined && item.widgetType) {
         onDrop(item.widgetType);
       }
     },
-    collect: (monitor) => ({
-      isOver: monitor.isOver(),
-    }),
   });
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isCmdOrCtrl = e.metaKey || e.ctrlKey;
       const isDeleteKey = e.key === "Backspace" || e.key === "Delete";
-
       if (isCmdOrCtrl && isDeleteKey && selectedWidgetId) {
         e.preventDefault();
-        const updated = widgets.filter((w) => w.id !== selectedWidgetId);
-        setWidgets(updated);
+        setWidgets(widgets.filter((w) => w.id !== selectedWidgetId));
         setSelectedWidgetId(null);
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [widgets, selectedWidgetId]);
+  }, [widgets, selectedWidgetId, setWidgets, setSelectedWidgetId]);
 
   const renderWidget = (widget: Widget) => {
     const mobileStyles = isMobileView
@@ -170,7 +163,6 @@ const Canvas: React.FC<CanvasProps> = ({
             {widget.content || "Dashed Button"}
           </Button>
         );
-
       case "Button3":
         return (
           <Button
@@ -185,7 +177,6 @@ const Canvas: React.FC<CanvasProps> = ({
             {widget.content || "Link Button"}
           </Button>
         );
-
       case "SearchBar2":
         return (
           <div style={styleProps}>
@@ -203,34 +194,34 @@ const Canvas: React.FC<CanvasProps> = ({
             </Space>
           </div>
         );
-
       case "Button":
         return (
           <Button type="primary" style={styleProps}>
             {widget.content || "Button"}
           </Button>
         );
-
       case "Image": {
         const imgSrc =
-          "https://yt3.googleusercontent.com/2eI1TjX447QZFDe6R32K0V2mjbVMKT5mIfQR-wK5bAsxttS_7qzUDS1ojoSKeSP0NuWd6sl7qQ=s900-c-k-c0x00ffffff-no-rj";
+          "https://cdn.pixabay.com/photo/2013/07/04/11/04/google-images-143148_1280.png";
         return (
           <img
             src={widget.props.src || imgSrc}
             alt={widget.props.alt || ""}
-            className="rounded-lg object-cover"
-            style={styleProps}
+            style={{
+              ...styleProps,
+              maxWidth: "100%",
+              height: "auto",
+              display: "block",
+            }}
           />
         );
       }
-
       case "Text":
         return (
           <Text style={styleProps}>
             {widget.content || "Sample text content"}
           </Text>
         );
-
       case "Table": {
         const columns = [
           { title: "Name", dataIndex: "name", key: "name" },
@@ -253,30 +244,20 @@ const Canvas: React.FC<CanvasProps> = ({
           </div>
         );
       }
-
       case "Form": {
         const [form] = Form.useForm();
         return (
           <div style={styleProps}>
-            {" "}
             <Form
               form={form}
               layout="vertical"
               style={{ maxWidth: 400 }}
-              onFinish={(vals) => console.log("Form submitted:", vals)}
+              onFinish={(v) => console.log(v)}
             >
-              <Form.Item
-                label="Name"
-                name="name"
-                rules={[{ required: true, message: "Name is required" }]}
-              >
+              <Form.Item label="Name" name="name" rules={[{ required: true }]}>
                 <Input placeholder="Enter name" />
               </Form.Item>
-              <Form.Item
-                label="Email"
-                name="email"
-                rules={[{ type: "email", message: "Invalid email" }]}
-              >
+              <Form.Item label="Email" name="email" rules={[{ type: "email" }]}>
                 <Input placeholder="Enter email" />
               </Form.Item>
               <Form.Item label="Comments" name="comments">
@@ -291,75 +272,58 @@ const Canvas: React.FC<CanvasProps> = ({
           </div>
         );
       }
-
       case "Calendar":
-        return (
-          <div style={styleProps}>
-            <Calendar fullscreen={false} />;
-          </div>
-        );
-
+        return <Calendar fullscreen={false} />;
       case "SearchBar":
         return (
-          <div style={styleProps}>
-            <Space direction="vertical" style={mobileStyles}>
-              <Search
-                placeholder={widget.content || "Search..."}
-                allowClear
-                enterButton
-                style={{ width: isMobileView ? "100%" : 300 }}
-              />
-            </Space>
-          </div>
+          <Space direction="vertical" style={mobileStyles}>
+            <Search
+              placeholder={widget.content || "Search..."}
+              allowClear
+              enterButton
+              style={{ width: isMobileView ? "100%" : 300 }}
+            />
+          </Space>
         );
-
       case "ImageSlider": {
         const urls = widget.content
           .split(",")
-          .map((u) => u.trim())
-          .filter((u) => u.startsWith("http"));
-        const slides =
-          urls.length > 0
-            ? urls
-            : [
-                "https://media.istockphoto.com/id/1481862788/photo/stack-of-books-with-blurred-bookshelf-background-reading-learning-education-or-home-office.jpg?s=612x612&w=0&k=20&c=HA0Xbmj0D6Gs08NFJAmo_L84qMODnQgD1xOi9vrdBqo=",
-                "https://www.shutterstock.com/image-photo/book-open-pages-close-up-600nw-2562942291.jpg",
-                "https://dq5pwpg1q8ru0.cloudfront.net/2024/06/11/23/32/19/f436ae76-3659-4edc-a434-ba10bd875d97/99302-1.jfif",
-              ];
-
+          .map((u: string) => u.trim())
+          .filter((u: string) => u.startsWith("http"));
+        const slides = urls.length
+          ? urls
+          : [
+              "https://media.istockphoto.com/id/1481862788/photo/stack-of-books-with-blurred-bookshelf-background-reading-learning-education-or-home-office.jpg?s=612x612&w=0&k=20&c=HA0Xbmj0D6Gs08NFJAmo_L84qMODnQgD1xOi9vrdBqo=",
+              "https://www.shutterstock.com/image-photo/book-open-pages-close-up-600nw-2562942291.jpg",
+              "https://dq5pwpg1q8ru0.cloudfront.net/2024/06/11/23/32/19/f436ae76-3659-4edc-a434-ba10bd875d97/99302-1.jfif",
+            ];
         return (
-          <div style={styleProps}>
-            {" "}
-            <Carousel autoplay dotPosition="bottom" style={{ maxWidth: 300 }}>
-              {slides.map((src, idx) => (
-                <div
-                  key={idx}
-                  className="h-40 flex justify-center items-center bg-gray-100"
-                >
-                  <img
-                    src={src}
-                    alt={`slide-${idx}`}
-                    style={{
-                      maxWidth: "100%",
-                      maxHeight: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
-                </div>
-              ))}
-            </Carousel>
-          </div>
+          <Carousel autoplay dotPosition="bottom" style={{ maxWidth: 300 }}>
+            {slides.map((src, i) => (
+              <div
+                key={i}
+                className="h-40 flex justify-center items-center bg-gray-100"
+              >
+                <img
+                  src={src}
+                  alt={`slide-${i}`}
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              </div>
+            ))}
+          </Carousel>
         );
       }
-
       default:
-        const { style, ...restProps } = widget.props || {};
-
+        const { style, ...rest } = widget.props || {};
         const Tag = widget.type as keyof JSX.IntrinsicElements;
-
         return React.createElement(
           Tag,
-          { style: styleProps, ...restProps },
+          { style: styleProps, ...rest },
           widget.content
         );
     }
@@ -369,15 +333,17 @@ const Canvas: React.FC<CanvasProps> = ({
     <div
       ref={dropRef}
       onClick={() => {
-        onSelectWidget(null), setIsVisualEditMode;
+        setSelectedWidgetId(null);
+        setIsVisualEditMode();
       }}
       className={`canvas-area ${isMobileView ? "mobile-canvas" : ""}`}
       style={{
-        border: "2px dashed #ccc",
-        background: isOver ? "#fafafa" : "transparent",
-        padding: isMobileView ? 12 : 20,
-        minHeight: isMobileView ? 500 : 600,
+        flex: 1,
+        height: "100%",
         overflow: "auto",
+        border: "2px dashed #ccc",
+        background: "transparent", // always transparent
+        padding: isMobileView ? 12 : 20,
         display: "flex",
         flexDirection: "column",
         gap: 12,
@@ -388,9 +354,9 @@ const Canvas: React.FC<CanvasProps> = ({
           Drag widgets here to start building your site
         </div>
       ) : (
-        widgets?.map((widget, idx) => (
+        widgets.map((widget, idx) => (
           <SortableWidget
-            key={widget?.id}
+            key={widget.id}
             widget={widget}
             index={idx}
             moveWidget={onMoveWidget}

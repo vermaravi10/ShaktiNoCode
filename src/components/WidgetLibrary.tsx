@@ -169,6 +169,8 @@ const WidgetLibrary: React.FC<WidgetLibraryProps> = ({ onAddWidget }) => {
     }));
   };
 
+  const hasSearch = searchTerm.trim() !== "";
+
   return (
     <div className="flex flex-col h-full text-foreground bg-white dark:bg-neutral-800">
       <div className="border-b border-border px-4 py-3">
@@ -188,6 +190,27 @@ const WidgetLibrary: React.FC<WidgetLibraryProps> = ({ onAddWidget }) => {
           </div>
         ) : (
           Object.entries(groupedWidgets).map(([category, widgets]) => {
+            if (hasSearch) {
+              // When searching, show all matches directly
+              return (
+                <div key={category} className="mb-6">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-2">
+                    {category}
+                  </div>
+                  <div className="space-y-2">
+                    {widgets.map((widget) => (
+                      <DraggableWidget
+                        key={widget.type}
+                        {...widget}
+                        onClick={onAddWidget}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+
+            // Default view: show only visibleByDefault, toggle others
             const visible = widgets.filter((w) => w.visibleByDefault);
             const hidden = widgets.filter((w) => !w.visibleByDefault);
             const isExpanded = expandedCategories[category];

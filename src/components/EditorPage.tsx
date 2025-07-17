@@ -1,304 +1,3 @@
-// import React, { useState, useRef, useEffect, useCallback } from "react";
-// import { Layout } from "antd";
-// import WidgetLibrary from "./WidgetLibrary";
-// import Canvas, { Widget } from "./Canvas";
-// import ChatPanel from "./ChatPanel";
-// import Toolbar from "./Toolbar";
-// import EditorFooter from "./EditorFooter";
-// import CodeEditor from "./CodeEditor";
-// import parseWidgetsFromJSX from "./utils/parseWidgets";
-// import { useEditor } from "@/context/EditorContext";
-// import VisualEditor from "./VisualEditor";
-// import { debounce } from "lodash";
-
-// const { Sider, Content } = Layout;
-// const MIN_SIDER = 150;
-// const MAX_SIDER = 500;
-
-// let idCounter = 1;
-// const generateUniqueId = () => idCounter++;
-
-// const EditorPage: React.FC = () => {
-//   const [isMobileView, setIsMobileView] = useState(false);
-//   const [splitRatio, setSplitRatio] = useState(0.5);
-//   const [leftWidth, setLeftWidth] = useState<number>(300);
-//   const [rightWidth, setRightWidth] = useState<number>(300);
-
-//   const monacoRef = useRef<any>(null);
-//   const dragging = useRef<null | "left" | "right" | "split">(null);
-
-//   const {
-//     code,
-//     setCode,
-//     widgets,
-//     setWidgets,
-//     selectedWidgetId,
-//     setSelectedWidgetId,
-//     isEditMode,
-//     setIsEditMode,
-//     isVisualEditMode,
-//     setIsVisualEditMode,
-//   } = useEditor();
-
-//   const handleSelectWidget = (widgetId: string) => {
-//     setSelectedWidgetId(widgetId);
-//   };
-//   const handleEditMode = () => {
-//     setIsVisualEditMode(false);
-//   };
-
-//   const tryParseAndUpdate = useCallback(
-//     debounce((newCode: string) => {
-//       let nextWidgets: Widget[] = [];
-//       try {
-//         nextWidgets = parseWidgetsFromJSX(newCode);
-//       } catch (err) {
-//         console.error(err);
-//         return;
-//       }
-//       if (nextWidgets.length > 0) {
-//         setWidgets(nextWidgets);
-//       }
-//     }, 300),
-//     [setWidgets]
-//   );
-
-//   const handleCodeChange = (newCode: string) => {
-//     setCode(newCode);
-//     tryParseAndUpdate(newCode);
-//   };
-
-//   const generateCodeFromWidgets = (widgetList: Widget[]): string => {
-//     const importSet = new Set<string>();
-//     widgetList.forEach((w) => {
-//       if (["Button", "Image", "Table", "Calendar"].includes(w.type)) {
-//         importSet.add(w.type);
-//       }
-//     });
-
-//     let importLines = `import React from 'react';\n`;
-//     if (importSet.size > 0) {
-//       importLines += `import { ${Array.from(importSet).join(
-//         ", "
-//       )} } from 'antd';\n`;
-//     }
-//     importLines += `\n`;
-
-//     let componentCode = `const GeneratedComponent = () => {\n  return (\n    <div style={{ padding: '20px' }}>\n`;
-
-//     widgetList.forEach((widget) => {
-//       const { type, props, content } = widget;
-//       let attrStr = "";
-
-//       if (props.style && Object.keys(props.style).length > 0) {
-//         const stylePairs = Object.entries(props.style).map(
-//           ([key, val]) =>
-//             `${key}: ${typeof val === "string" ? `'${val}'` : val}`
-//         );
-//         attrStr += ` style={{ ${stylePairs.join(", ")} }}`;
-//       }
-//       if (props.src) {
-//         attrStr += ` src="${props.src}"`;
-//       }
-//       if (props.alt) {
-//         attrStr += ` alt="${props.alt}"`;
-//       }
-
-//       if (type === "Image" || type === "img") {
-//         componentCode += `      <${type}${attrStr} />\n`;
-//       } else {
-//         componentCode += `      <${type}${attrStr}>${
-//           content || ""
-//         }</${type}>\n`;
-//       }
-//     });
-
-//     componentCode += `    </div>\n  );\n};\n\nexport default GeneratedComponent;\n`;
-
-//     return importLines + componentCode;
-//   };
-
-//   const handleAddWidget = (widgetType: string) => {
-//     const newWidgets = [...widgets];
-//     const newWidget: any = {
-//       id: generateUniqueId(),
-//       type: widgetType,
-//       props: { style: {} },
-//       content: "",
-//     };
-
-//     switch (widgetType) {
-//       case "ImageSlider":
-//         newWidget.props.images = ["", "", ""];
-//         break;
-//       case "Button":
-//         newWidget.content = "Sample Button";
-//         break;
-//       case "Text":
-//         newWidget.content = "Sample Text";
-//         break;
-//       case "Image":
-//         newWidget.props.src =
-//           "data:image/png;base64,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";
-//         newWidget.props.alt = "Sample Image";
-//         break;
-//       case "Table":
-//         newWidget.content = "Sample Table";
-//         break;
-//       case "Calendar":
-//         newWidget.content = "Sample Calendar";
-//         break;
-//     }
-
-//     newWidgets.push(newWidget);
-//     setWidgets(newWidgets);
-//     setCode(generateCodeFromWidgets(newWidgets));
-//   };
-
-//   const handleMoveWidget = (fromIndex: number, toIndex: number) => {
-//     const updated = [...widgets];
-//     const [moved] = updated.splice(fromIndex, 1);
-//     updated.splice(toIndex, 0, moved);
-//     setWidgets(updated);
-//     setCode(generateCodeFromWidgets(updated));
-//   };
-
-//   useEffect(() => {
-//     const onMouseMove = (e: MouseEvent) => {
-//       if (dragging.current === "split") {
-//         const total = window.innerHeight - 48;
-//         const r = (e.clientY - 48) / total;
-//         setSplitRatio(Math.max(0.1, Math.min(0.9, r)));
-//       } else if (dragging.current === "left") {
-//         const w = Math.max(MIN_SIDER, Math.min(MAX_SIDER, e.clientX));
-//         setLeftWidth(w);
-//       } else if (dragging.current === "right") {
-//         const total = window.innerWidth;
-//         const w = Math.max(MIN_SIDER, Math.min(MAX_SIDER, total - e.clientX));
-//         setRightWidth(w);
-//       }
-//     };
-//     const onMouseUp = () => {
-//       dragging.current = null;
-//     };
-//     window.addEventListener("mousemove", onMouseMove);
-//     window.addEventListener("mouseup", onMouseUp);
-//     return () => {
-//       window.removeEventListener("mousemove", onMouseMove);
-//       window.removeEventListener("mouseup", onMouseUp);
-//     };
-//   }, []);
-
-//   useEffect(() => {
-//     if (!selectedWidgetId) {
-//       setIsVisualEditMode(false);
-//     }
-//   }, [selectedWidgetId, setIsVisualEditMode]);
-
-//   return (
-//     <Layout className="editor-layout bg-white dark:bg-neutral-800 h-screen">
-//       <Toolbar
-//         isEditMode={isEditMode}
-//         isVisualEditMode={isVisualEditMode}
-//         onToggleVisualEditMode={() => setIsVisualEditMode((v) => !v)}
-//         onToggleMode={() => setIsEditMode((m) => !m)}
-//         isMobileView={isMobileView}
-//         onToggleMobileView={() => setIsMobileView((v) => !v)}
-//       />
-
-//       <Layout className="flex flex-row flex-1 overflow-hidden">
-//         <Sider
-//           width={isEditMode ? 0 : leftWidth}
-//           className="h-full transition-all duration-200 overflow-hidden border-r border-border"
-//         >
-//           <ChatPanel />
-//         </Sider>
-//         {!isEditMode && (
-//           <div
-//             onMouseDown={() => (dragging.current = "left")}
-//             className="w-1 cursor-col-resize bg-border"
-//           />
-//         )}
-
-//         <Content className="flex flex-col flex-1 overflow-hidden bg-white dark:bg-neutral-800">
-//           {isEditMode ? (
-//             <div className="flex flex-col flex-1 p-4">
-//               <div
-//                 className="overflow-auto"
-//                 style={{ height: `${splitRatio * 100}vh` }}
-//               >
-//                 <Canvas
-//                   onDrop={handleAddWidget}
-//                   isMobileView={isMobileView}
-//                   onMoveWidget={handleMoveWidget}
-//                   onSelectWidget={handleSelectWidget}
-//                   setIsVisualEditMode={handleEditMode}
-//                 />
-//               </div>
-
-//               <div
-//                 onMouseDown={() => (dragging.current = "split")}
-//                 className="h-1 bg-border cursor-row-resize"
-//               />
-
-//               <div
-//                 className="overflow-auto"
-//                 style={{ height: `${(1 - splitRatio) * 100}vh` }}
-//               >
-//                 <CodeEditor
-//                   ref={monacoRef}
-//                   code={code}
-//                   onCodeChange={handleCodeChange}
-//                 />
-//               </div>
-//             </div>
-//           ) : (
-//             <div className="relative flex justify-center items-start overflow-hidden h-full bg-white dark:bg-neutral-800 text-foreground">
-//               <div
-//                 className={`w-full h-full ${
-//                   isMobileView
-//                     ? "max-w-sm border-x border-border shadow-lg bg-background"
-//                     : ""
-//                 }`}
-//               >
-//                 <Canvas
-//                   onDrop={handleAddWidget}
-//                   isMobileView={isMobileView}
-//                   onMoveWidget={handleMoveWidget}
-//                   onSelectWidget={handleSelectWidget}
-//                   setIsVisualEditMode={handleEditMode}
-//                 />
-//               </div>
-//             </div>
-//           )}
-//         </Content>
-
-//         {!isEditMode && (
-//           <div
-//             onMouseDown={() => (dragging.current = "right")}
-//             className="w-1 cursor-col-resize bg-border"
-//           />
-//         )}
-
-//         <Sider
-//           width={isEditMode ? 0 : rightWidth}
-//           className="h-full transition-all duration-200 overflow-hidden border-l border-border bg-white dark:bg-neutral-800"
-//         >
-//           {selectedWidgetId && isVisualEditMode ? (
-//             <VisualEditor />
-//           ) : (
-//             <WidgetLibrary onAddWidget={handleAddWidget} />
-//           )}
-//         </Sider>
-//       </Layout>
-
-//       {!isEditMode && <EditorFooter />}
-//     </Layout>
-//   );
-// };
-
-// export default EditorPage;
-
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Layout } from "antd";
 import WidgetLibrary from "./WidgetLibrary";
@@ -340,6 +39,7 @@ const EditorPage: React.FC = () => {
     isVisualEditMode,
     setIsVisualEditMode,
   } = useEditor();
+  console.log("🚀 ~ selectedWidgetId:", selectedWidgetId);
 
   const handleSelectWidget = (widgetId: string) => {
     setSelectedWidgetId(widgetId);
@@ -350,15 +50,13 @@ const EditorPage: React.FC = () => {
 
   const tryParseAndUpdate = useCallback(
     debounce((newCode: string) => {
-      let nextWidgets: Widget[] = [];
       try {
-        nextWidgets = parseWidgetsFromJSX(newCode);
+        const nextWidgets: Widget[] = parseWidgetsFromJSX(newCode);
+        if (nextWidgets.length > 0) {
+          setWidgets(nextWidgets);
+        }
       } catch (err) {
-        console.error(err);
-        return;
-      }
-      if (nextWidgets.length > 0) {
-        setWidgets(nextWidgets);
+        console.error("Error parsing code to widgets:", err);
       }
     }, 300),
     [setWidgets]
@@ -376,7 +74,6 @@ const EditorPage: React.FC = () => {
         importSet.add(w.type);
       }
     });
-
     let importLines = `import React from 'react';\n`;
     if (importSet.size > 0) {
       importLines += `import { ${Array.from(importSet).join(
@@ -384,42 +81,30 @@ const EditorPage: React.FC = () => {
       )} } from 'antd';\n`;
     }
     importLines += `\n`;
-
-    let componentCode = `const GeneratedComponent = () => {\n  return (\n    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', padding: '20px' }}>\n`;
-
+    let componentCode = `const GeneratedComponent = () => {\n  return (\n    <div style={{ position: 'relative', width: '100%', padding: '20px' }}>\n`;
     widgetList.forEach((widget) => {
       const { type, props, content } = widget;
-      let attrStr = "";
-
+      let styleStr = "";
       if (props.style && Object.keys(props.style).length > 0) {
         const stylePairs = Object.entries(props.style).map(
           ([key, val]) =>
             `${key}: ${typeof val === "string" ? `'${val}'` : val}`
         );
-        attrStr += ` style={{ ${stylePairs.join(", ")} }}`;
+        styleStr = ` style={{ ${stylePairs.join(", ")} }}`;
       }
-      if (props.src) {
-        attrStr += ` src="${props.src}"`;
-      }
-      if (props.alt) {
-        attrStr += ` alt="${props.alt}"`;
-      }
-
       if (type === "Image" || type === "img") {
-        componentCode += `      <${type}${attrStr} />\n`;
+        componentCode += `      <${type}${styleStr} />\n`;
       } else {
-        componentCode += `      <${type}${attrStr}>${
+        componentCode += `      <${type}${styleStr}>${
           content || ""
         }</${type}>\n`;
       }
     });
-
     componentCode += `    </div>\n  );\n};\n\nexport default GeneratedComponent;\n`;
-
     return importLines + componentCode;
   };
 
-  const handleAddWidget = (widgetType: string) => {
+  const handleAddWidget = (widgetType: string, x?: number, y?: number) => {
     const newWidgets = [...widgets];
     const newWidget: any = {
       id: generateUniqueId(),
@@ -427,7 +112,7 @@ const EditorPage: React.FC = () => {
       props: { style: {} },
       content: "",
     };
-
+    // Initialize widget-specific default content/props
     switch (widgetType) {
       case "ImageSlider":
         newWidget.props.images = ["", "", ""];
@@ -450,20 +135,17 @@ const EditorPage: React.FC = () => {
         newWidget.content = "Sample Calendar";
         break;
     }
-
+    // Assign initial position (avoid overlapping existing widgets)
+    newWidget.props.style.position = "absolute";
+    const offsetCount = newWidgets.length;
+    newWidget.props.style.left = x !== undefined ? x : 20 * offsetCount;
+    newWidget.props.style.top = y !== undefined ? y : 20 * offsetCount;
     newWidgets.push(newWidget);
     setWidgets(newWidgets);
     setCode(generateCodeFromWidgets(newWidgets));
   };
 
-  const handleMoveWidget = (fromIndex: number, toIndex: number) => {
-    const updated = [...widgets];
-    const [moved] = updated.splice(fromIndex, 1);
-    updated.splice(toIndex, 0, moved);
-    setWidgets(updated);
-    setCode(generateCodeFromWidgets(updated));
-  };
-
+  // Handle editor pane resizing and dragging
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (dragging.current === "split") {
@@ -490,6 +172,7 @@ const EditorPage: React.FC = () => {
     };
   }, []);
 
+  // Exit visual edit mode when no widget is selected
   useEffect(() => {
     if (!selectedWidgetId) {
       setIsVisualEditMode(false);
@@ -531,7 +214,6 @@ const EditorPage: React.FC = () => {
                 <Canvas
                   onDrop={handleAddWidget}
                   isMobileView={isMobileView}
-                  onMoveWidget={handleMoveWidget}
                   onSelectWidget={handleSelectWidget}
                   setIsVisualEditMode={handleEditMode}
                 />
@@ -565,7 +247,6 @@ const EditorPage: React.FC = () => {
                 <Canvas
                   onDrop={handleAddWidget}
                   isMobileView={isMobileView}
-                  onMoveWidget={handleMoveWidget}
                   onSelectWidget={handleSelectWidget}
                   setIsVisualEditMode={handleEditMode}
                 />

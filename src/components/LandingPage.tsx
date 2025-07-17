@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import dummyCardData, { prompts } from "./Constant.ts";
 import DummyCard from "./DummyCards";
 import LandingFooter from "./LandingFooter";
+import SplitText from "../../yes/SplitText/SplitText.tsx";
 
 const { TextArea } = Input;
 
@@ -166,6 +167,20 @@ const LandingPage = () => {
           Launch Scalable, Secure, and Stunning Websites in Minutes with
           Shakti.AI
         </p>
+        <SplitText
+          text="Hello, GdsSAP!"
+          className="text-2xl font-semibold text-center"
+          delay={100}
+          duration={0.6}
+          ease="power3.out"
+          splitType="chars"
+          from={{ opacity: 0, y: 40 }}
+          to={{ opacity: 1, y: 0 }}
+          threshold={0.1}
+          rootMargin="-100px"
+          textAlign="center"
+          // onLetterAnimationComplete={handleAnimationComplete}
+        />
 
         <div style={{ width: "50%", justifySelf: "center" }}>
           <form className="w-full border border-gray-700 rounded-3xl bg-[#1e1d1d] p-4 shadow-xl">

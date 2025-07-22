@@ -144,6 +144,7 @@ const LandingPage = () => {
                 border: "1px solid rgb(226 232 240)",
                 cursor: "pointer",
               }}
+              onClick={() => navigate("/Login")}
             >
               Login
             </button>
@@ -157,6 +158,7 @@ const LandingPage = () => {
                 cursor: "pointer",
                 transition: "background-color 0.2s, transform 0.2s",
               }}
+              onClick={() => navigate("/Signup")}
             >
               Sign-Up
             </button>

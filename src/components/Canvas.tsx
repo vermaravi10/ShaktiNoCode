@@ -53,8 +53,8 @@ const SortableWidget: React.FC<{
         index,
         left: widget.props.style?.left || 0,
         top: widget.props.style?.top || 0,
-        width: rect?.width || widget.props.style?.width || 100,
-        height: rect?.height || widget.props.style?.height || 50,
+        width: rect?.width ?? widget.props.style?.width ?? 100,
+        height: rect?.height ?? widget.props.style?.height ?? 50,
       };
     },
     collect: (monitor: DragSourceMonitor) => ({
@@ -107,8 +107,6 @@ const SortableWidget: React.FC<{
         position: "absolute",
         top: widget.props.style?.top || 0,
         left: widget.props.style?.left || 0,
-        width: widget.props.style?.width,
-        height: widget.props.style?.height,
         opacity: isDragging ? 0.5 : 1,
         cursor: "move",
         resize: "both",
@@ -117,8 +115,10 @@ const SortableWidget: React.FC<{
         minHeight: 100,
         border: selected ? "2px solid #1890ff" : "1px solid #ddd",
         borderRadius: 4,
-        padding: 8,
         background: selected ? "#e6f7ff" : "#fff",
+        boxSizing: "border-box",
+        padding: 0,
+        margin: 0,
       }}
     >
       {renderWidget(widget)}
@@ -165,7 +165,7 @@ const Canvas: React.FC<CanvasProps> = ({
           ([key, val]) =>
             `${key}: ${typeof val === "string" ? `'${val}'` : val}`
         );
-        styleStr = ` style={{ ${stylePairs.join(", ")} }}`;
+        styleStr = ` style={{ ${stylePairs.join(", ")} }`;
       }
       if (type === "Image" || type === "img") {
         componentCode += `      <${type}${styleStr} />\n`;
@@ -197,53 +197,9 @@ const Canvas: React.FC<CanvasProps> = ({
           newLeft += delta.x;
           newTop += delta.y;
         }
-
         newLeft = Math.max(0, newLeft);
         newTop = Math.max(0, newTop);
-
-        let collidedWidget: Widget | null = null;
-        let maxOverlapArea = 0;
-        widgets.forEach((w) => {
-          if (w.id === item.id) return;
-          const wLeft = w.props.style.left || 0;
-          const wTop = w.props.style.top || 0;
-          const wWidth = w.props.style.width || 100;
-          const wHeight = w.props.style.height || 50;
-          const itemWidth = item.width || 100;
-          const itemHeight = item.height || 50;
-          const overlapX = Math.max(
-            0,
-            Math.min(newLeft + itemWidth, wLeft + wWidth) -
-              Math.max(newLeft, wLeft)
-          );
-          const overlapY = Math.max(
-            0,
-            Math.min(newTop + itemHeight, wTop + wHeight) -
-              Math.max(newTop, wTop)
-          );
-          const overlapArea = overlapX * overlapY;
-          if (overlapArea > maxOverlapArea) {
-            maxOverlapArea = overlapArea;
-            collidedWidget = w;
-          }
-        });
-
-        let updatedWidgets = [...widgets];
-        if (collidedWidget) {
-          updatedWidgets = updatedWidgets.map((w) =>
-            w.id === collidedWidget!.id
-              ? {
-                  ...w,
-                  props: {
-                    ...w.props,
-                    style: { ...w.props.style, top: item.top, left: item.left },
-                  },
-                }
-              : w
-          );
-        }
-
-        updatedWidgets = updatedWidgets.map((w) =>
+        const updatedWidgets = widgets.map((w) =>
           w.id === item.id
             ? {
                 ...w,
@@ -256,29 +212,6 @@ const Canvas: React.FC<CanvasProps> = ({
         );
         setWidgets(updatedWidgets);
         setCode(generateCodeFromWidgets(updatedWidgets));
-      }
-    },
-    hover: (item: any, monitor: DropTargetMonitor) => {
-      if (monitor.getItemType() === "CANVAS_WIDGET") {
-        const delta = monitor.getDifferenceFromInitialOffset();
-        if (!delta) return;
-        let newLeft = item.left + delta.x;
-        let newTop = item.top + delta.y;
-        newLeft = Math.max(0, newLeft);
-        newTop = Math.max(0, newTop);
-        setWidgets((prevWidgets) =>
-          prevWidgets.map((w) =>
-            w.id === item.id
-              ? {
-                  ...w,
-                  props: {
-                    ...w.props,
-                    style: { ...w.props.style, top: newTop, left: newLeft },
-                  },
-                }
-              : w
-          )
-        );
       }
     },
   });
@@ -299,6 +232,11 @@ const Canvas: React.FC<CanvasProps> = ({
               backgroundColor: "#f9f0ff",
               borderColor: "#9254de",
               color: "#722ed1",
+              width: "100%",
+              height: "100%",
+
+              top: 0,
+              left: 0,
             }}
           >
             {widget.content || "Dashed Button"}
@@ -313,6 +251,10 @@ const Canvas: React.FC<CanvasProps> = ({
               fontWeight: "bold",
               fontSize: "16px",
               color: "#1677ff",
+              width: "100%",
+              height: "100%",
+              top: 0,
+              left: 0,
             }}
           >
             {widget.content || "Link Button"}
@@ -327,9 +269,11 @@ const Canvas: React.FC<CanvasProps> = ({
                 allowClear
                 enterButton="Go"
                 style={{
-                  width: isMobileView ? "100%" : 300,
-                  backgroundColor: "#e6f7ff",
-                  borderRadius: 4,
+                  ...styleProps,
+                  width: "100%",
+                  height: "100%",
+                  top: 0,
+                  left: 0,
                 }}
               />
             </Space>
@@ -337,7 +281,16 @@ const Canvas: React.FC<CanvasProps> = ({
         );
       case "Button":
         return (
-          <Button type="primary" style={styleProps}>
+          <Button
+            type="primary"
+            style={{
+              ...styleProps,
+              width: "100%",
+              height: "100%",
+              top: 0,
+              left: 0,
+            }}
+          >
             {widget.content || "Button"}
           </Button>
         );
@@ -350,16 +303,26 @@ const Canvas: React.FC<CanvasProps> = ({
             alt={widget.props.alt || ""}
             style={{
               ...styleProps,
-              maxWidth: "100%",
-              height: "auto",
+              width: "100%",
+              height: "100%",
               display: "block",
+              top: 0,
+              left: 0,
             }}
           />
         );
       }
       case "Text":
         return (
-          <Text style={styleProps}>
+          <Text
+            style={{
+              ...styleProps,
+              width: "100%",
+              height: "100%",
+              top: 0,
+              left: 0,
+            }}
+          >
             {widget.content || "Sample text content"}
           </Text>
         );
@@ -375,7 +338,15 @@ const Canvas: React.FC<CanvasProps> = ({
           { key: 3, name: "Charlie", age: 22, country: "Australia" },
         ];
         return (
-          <div style={styleProps}>
+          <div
+            style={{
+              ...styleProps,
+              width: "100%",
+              height: "100%",
+              top: 0,
+              left: 0,
+            }}
+          >
             <Table
               dataSource={dataSource}
               columns={columns}
@@ -385,44 +356,31 @@ const Canvas: React.FC<CanvasProps> = ({
           </div>
         );
       }
-      case "Form": {
-        const [form] = Form.useForm();
-        return (
-          <div style={styleProps}>
-            <Form
-              form={form}
-              layout="vertical"
-              style={{ maxWidth: 400 }}
-              onFinish={(v) => console.log(v)}
-            >
-              <Form.Item label="Name" name="name" rules={[{ required: true }]}>
-                <Input placeholder="Enter name" />
-              </Form.Item>
-              <Form.Item label="Email" name="email" rules={[{ type: "email" }]}>
-                <Input placeholder="Enter email" />
-              </Form.Item>
-              <Form.Item label="Comments" name="comments">
-                <TextArea rows={3} placeholder="Enter comments" />
-              </Form.Item>
-              <Form.Item>
-                <Button type="primary" htmlType="submit">
-                  Submit
-                </Button>
-              </Form.Item>
-            </Form>
-          </div>
-        );
-      }
       case "Calendar":
         return <Calendar fullscreen={false} />;
       case "SearchBar":
         return (
-          <Space direction="vertical" style={mobileStyles}>
+          <Space
+            direction="vertical"
+            style={{
+              ...styleProps,
+              width: "100%",
+              height: "100%",
+              top: 0,
+              left: 0,
+            }}
+          >
             <Search
               placeholder={widget.content || "Search..."}
               allowClear
               enterButton
-              style={{ width: isMobileView ? "100%" : 300 }}
+              style={{
+                ...styleProps,
+                width: "100%",
+                height: "100%",
+                top: 0,
+                left: 0,
+              }}
             />
           </Space>
         );
@@ -439,7 +397,17 @@ const Canvas: React.FC<CanvasProps> = ({
               "https://dq5pwpg1q8ru0.cloudfront.net/2024/06/11/23/32/19/f436ae76-3659-4edc-a434-ba10bd875d97/99302-1.jfif",
             ];
         return (
-          <Carousel autoplay dotPosition="bottom" style={{ maxWidth: 300 }}>
+          <Carousel
+            autoplay
+            dotPosition="bottom"
+            style={{
+              ...styleProps,
+              width: "100%",
+              height: "100%",
+              top: 0,
+              left: 0,
+            }}
+          >
             {slides.map((src, i) => (
               <div
                 key={i}
@@ -464,7 +432,7 @@ const Canvas: React.FC<CanvasProps> = ({
         const Tag = widget.type as keyof JSX.IntrinsicElements;
         return React.createElement(
           Tag,
-          { style: styleProps, ...rest },
+          { style: styleProps, ...rest, top: 0, left: 0 },
           widget.content
         );
       }

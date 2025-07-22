@@ -9,6 +9,8 @@ import LandingPage from "./components/LandingPage";
 import EditorPage from "./components/EditorPage";
 import NotFound from "./pages/NotFound";
 import { EditorProvider } from "@/context/EditorContext";
+import Login from "./components/Login";
+import Signup from "./components/Signup";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +25,9 @@ const App = () => (
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/editor" element={<EditorPage />} />
+              <Route path="/Login" element={<Login />} />
+              <Route path="/Signup" element={<Signup />} />
+
               <Route path="*" element={<NotFound />} />
             </Routes>
           </EditorProvider>

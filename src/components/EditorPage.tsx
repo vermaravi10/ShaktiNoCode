@@ -10,6 +10,8 @@ import parseWidgetsFromJSX from "./utils/parseWidgets";
 import { useEditor } from "@/context/EditorContext";
 import VisualEditor from "./VisualEditor";
 import { debounce } from "lodash";
+import { useNavigate } from "react-router-dom";
+import { auth } from "../firebase.ts";
 
 const { Sider, Content } = Layout;
 const MIN_SIDER = 150;
@@ -26,6 +28,23 @@ const EditorPage: React.FC = () => {
 
   const monacoRef = useRef<any>(null);
   const dragging = useRef<null | "left" | "right" | "split">(null);
+
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const unsub = auth.onAuthStateChanged((currentUser) => {
+      if (!currentUser) navigate("/login");
+      setUser(currentUser);
+    });
+
+    return () => unsub();
+  }, [navigate]);
+
+  const logout = () => {
+    auth.signOut();
+    navigate("/");
+  };
 
   const {
     code,
@@ -135,17 +154,17 @@ const EditorPage: React.FC = () => {
         newWidget.content = "Sample Calendar";
         break;
     }
-    // Assign initial position (avoid overlapping existing widgets)
-    newWidget.props.style.position = "absolute";
-    const offsetCount = newWidgets.length;
-    newWidget.props.style.left = x !== undefined ? x : 20 * offsetCount;
-    newWidget.props.style.top = y !== undefined ? y : 20 * offsetCount;
+
+    newWidget.props.style = {
+      position: "absolute",
+      left: x !== undefined ? x : 20 * newWidgets.length,
+      top: y !== undefined ? y : 20 * newWidgets.length,
+    };
     newWidgets.push(newWidget);
     setWidgets(newWidgets);
     setCode(generateCodeFromWidgets(newWidgets));
   };
 
-  // Handle editor pane resizing and dragging
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (dragging.current === "split") {
@@ -172,7 +191,6 @@ const EditorPage: React.FC = () => {
     };
   }, []);
 
-  // Exit visual edit mode when no widget is selected
   useEffect(() => {
     if (!selectedWidgetId) {
       setIsVisualEditMode(false);
@@ -188,6 +206,7 @@ const EditorPage: React.FC = () => {
         onToggleMode={() => setIsEditMode((m) => !m)}
         isMobileView={isMobileView}
         onToggleMobileView={() => setIsMobileView((v) => !v)}
+        logout={logout}
       />
 
       <Layout className="flex flex-row flex-1 overflow-hidden">

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -25,6 +25,7 @@ interface ToolbarProps {
   onToggleMobileView: () => void;
   isVisualEditMode: boolean;
   onToggleVisualEditMode: () => void;
+  logout: () => void;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -34,7 +35,10 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onToggleMobileView,
   isVisualEditMode,
   onToggleVisualEditMode,
+  logout,
 }) => {
+  const [showProfileDropdown, setShowProfileDropdown] =
+    useState<boolean>(false);
   const { undo, redo, canUndo, canRedo, reset } = useEditor();
 
   const [theme, setTheme] = React.useState<"light" | "dark">(() => {
@@ -210,6 +214,47 @@ const Toolbar: React.FC<ToolbarProps> = ({
             <Rocket className="h-4 w-4" />
           </Button>
         </Tooltip>
+
+        {/* User Profile Dropdown */}
+        <div className="relative">
+          <Tooltip title="User Profile">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="text-foreground hover:bg-muted rounded-md"
+              onClick={() => setShowProfileDropdown((prev) => !prev)}
+            >
+              <span className="sr-only">User Profile</span>
+              {/* Use a generic user icon from lucide-react */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
+              </svg>
+            </Button>
+          </Tooltip>
+          {showProfileDropdown && (
+            <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50">
+              <button
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+                // onClick={handleViewProfile}
+              >
+                View Profile
+              </button>
+              <button
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+                onClick={logout}
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

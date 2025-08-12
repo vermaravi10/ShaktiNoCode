@@ -43,7 +43,7 @@ export default function Login() {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      navigate("/dashboard");
+      navigate("/editor");
     } catch (err) {
       alert(err.message);
     }

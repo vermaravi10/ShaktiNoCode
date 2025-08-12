@@ -81,6 +81,23 @@ const EditorPage: React.FC = () => {
     [setWidgets]
   );
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        selectedWidgetId &&
+        (e.key === "Delete" || e.key === "Backspace") &&
+        (e.metaKey || e.ctrlKey)
+      ) {
+        setWidgets((prev) => prev.filter((w) => w.id !== selectedWidgetId));
+        setSelectedWidgetId(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedWidgetId]);
+
   const handleCodeChange = (newCode: string) => {
     setCode(newCode);
     tryParseAndUpdate(newCode);

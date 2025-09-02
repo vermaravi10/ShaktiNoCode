@@ -17,6 +17,7 @@ import {
 import { Tooltip } from "antd";
 import { useEditor } from "@/context/EditorContext";
 import { CloseSquareOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 
 interface ToolbarProps {
   isEditMode: boolean;
@@ -37,6 +38,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onToggleVisualEditMode,
   logout,
 }) => {
+  const navigate = useNavigate();
   const [showProfileDropdown, setShowProfileDropdown] =
     useState<boolean>(false);
   const { undo, redo, canUndo, canRedo, reset } = useEditor();
@@ -88,6 +90,13 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
         <Tooltip title="AI Auto-correct">
           <Button
+            onClick={() =>
+              window.open(
+                "http://localhost:5174",
+                "_blank",
+                "noopener,noreferrer"
+              )
+            }
             size="icon"
             variant="ghost"
             className="text-foreground bg-gradient-to-r from-primary/10 to-accent/10 hover:from-primary/20 hover:to-accent/20 rounded-md"

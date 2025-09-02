@@ -9,6 +9,8 @@ import React, {
 import parseWidgetsFromJSX from "@/components/utils/parseWidgets";
 
 export type Widget = {
+  y: number;
+  x: number;
   id: string;
   type: string;
   props: {
@@ -65,10 +67,10 @@ const GeneratedComponent = () => {
 export default GeneratedComponent;`;
 
 export const EditorProvider = ({ children }: { children: ReactNode }) => {
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
   const [pointer, setPointer] = useState<number>(-1);
   const [codeRaw, setCodeRaw] = useState<string>(defaultCode);
-  const [widgetsRaw, setWidgetsRaw] = useState<Widget[]>(() =>
+  const [widgetsRaw, setWidgetsRaw] = useState<any[]>(() =>
     parseWidgetsFromJSX(defaultCode)
   );
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);

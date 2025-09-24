@@ -13,6 +13,8 @@
   "dependencies": {
     "@ant-design/icons": "^5.6.1",
     "@babel/standalone": "^7.27.6",
+    "@codesandbox/sandpack-client": "^2.19.8",
+    "@codesandbox/sandpack-react": "^2.20.0",
     "@hookform/resolvers": "^3.9.0",
     "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-accordion": "^1.2.0",
@@ -48,6 +50,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
+    "dotenv": "^17.2.2",
     "embla-carousel-react": "^8.3.0",
     "firebase": "^11.10.0",
     "gsap": "^3.13.0",

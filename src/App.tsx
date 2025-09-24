@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import { EditorProvider } from "@/context/EditorContext";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
+import LovableUi from "./components/lovable/editor";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/editor" element={<EditorPage />} />
+              <Route path="/editor1" element={<LovableUi />} />
               <Route path="/Login" element={<Login />} />
               <Route path="/Signup" element={<Signup />} />
 

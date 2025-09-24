@@ -38,7 +38,7 @@ const LandingPage = () => {
     const link = submittedLink
       ? `&link=${encodeURIComponent(submittedLink)}`
       : "";
-    navigate(`/editor?${query}${link}`);
+    navigate(`/editor1?${query}${link}`);
   };
 
   const handleAttach = () => {

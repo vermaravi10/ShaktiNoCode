@@ -29,6 +29,9 @@ export interface HistoryEntry {
 }
 
 type EditorContextType = {
+  showChat: boolean;
+  setShowChat: (val: boolean) => void;
+  tab: string;
   code: string;
   setCode: (code: string) => void;
   widgets: Widget[];
@@ -39,10 +42,11 @@ type EditorContextType = {
   canRedo: boolean;
   selectedWidgetId: string | null;
   setSelectedWidgetId: (id: string | null) => void;
-  theme: "light" | "dark";
-  setTheme: (theme: "light" | "dark") => void;
+  theme: "dark" | "light";
+  setTheme: (theme: "dark" | "light") => void;
   zoom: number;
   setZoom: (zoom: number) => void;
+  setTab: (val: string) => void;
   isEditMode: boolean;
   setIsEditMode: (val: any) => void;
   isVisualEditMode: any;
@@ -67,6 +71,8 @@ const GeneratedComponent = () => {
 export default GeneratedComponent;`;
 
 export const EditorProvider = ({ children }: { children: ReactNode }) => {
+  const [showChat, setShowChat] = useState(true);
+  const [tab, setTab] = useState("code");
   const [history, setHistory] = useState<any[]>([]);
   const [pointer, setPointer] = useState<number>(-1);
   const [codeRaw, setCodeRaw] = useState<string>(defaultCode);
@@ -74,7 +80,8 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     parseWidgetsFromJSX(defaultCode)
   );
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  console.log("🚀 ~ EditorProvider ~ theme:", theme);
   const [zoom, setZoom] = useState<number>(1);
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [isVisualEditMode, setIsVisualEditMode] = useState<boolean>(false);
@@ -121,7 +128,7 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     setCodeRaw(defaultCode);
     setWidgetsRaw(parseWidgetsFromJSX(defaultCode));
     setSelectedWidgetId(null);
-    setTheme("light");
+    setTheme("dark");
     setZoom(1);
     setIsEditMode(false);
     setIsVisualEditMode(false);
@@ -142,7 +149,7 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
         setCodeRaw(parsed.code ?? defaultCode);
         setWidgetsRaw(parsed.widgets ?? parseWidgetsFromJSX(defaultCode));
         setSelectedWidgetId(parsed.selectedWidgetId ?? null);
-        setTheme(parsed.theme ?? "light");
+        setTheme(parsed.theme ?? "dark");
         setZoom(parsed.zoom ?? 1);
         setIsEditMode(parsed.isEditMode ?? false);
         setIsVisualEditMode(parsed.isVisualEditMode ?? false);
@@ -224,6 +231,10 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
         isVisualEditMode,
         setIsVisualEditMode,
         reset,
+        tab,
+        setTab,
+        showChat,
+        setShowChat,
       }}
     >
       {children}

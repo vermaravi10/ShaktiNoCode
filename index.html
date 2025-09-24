@@ -13,6 +13,22 @@
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://yotta.com/wp-content/uploads/2023/12/yotta-shakti-logo.jpg" />
   <link rel="icon" href="https://yotta.com/wp-content/uploads/2023/12/yotta-shakti-logo.jpg" type="image/png">
+  <script>
+    (function () {
+      try {
+        const t = localStorage.getItem('theme');
+        if (!t || t === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (e) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="index.css">
 
 </head>
 
